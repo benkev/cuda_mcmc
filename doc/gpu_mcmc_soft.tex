@@ -1,0 +1,1085 @@
+%\documentclass[apj]{emulateapj}
+%\documentclass[preprint]{emulateapj}  %{aastex}
+%\documentclass[manuscript]{aastex}
+%\documentclass[preprint2]{emulateapj}
+\documentclass[preprint2]{aastex}
+\usepackage{amsmath}
+%\usepackage{amssymb}
+%\usepackage{deluxetable}
+%\usepackage[charter]{mathdesign}
+\usepackage{bm}
+%\usepackage{breqn}
+\usepackage{natbib}
+\newcommand{\bfOmega}{\,\mathbf{\Omega}}
+\newcommand{\bfv}{\,\mathbf{v}}
+\newcommand{\bfu}{\,\mathbf{u}}
+\newcommand{\bfr}{\,\mathbf{r}}
+\newcommand{\bfk}{\,\mathbf{k}}
+\newcommand{\bfp}{\,\mathbf{p}}
+\newcommand{\bfx}{\,\mathbf{x}}
+\newcommand{\bfy}{\,\mathbf{y}}
+\newcommand{\hstp}{\,{\frac{\ud s}{2}}}
+\newcommand{\ud}{\,\mathrm{d}}
+\newcommand{\uT}{\,\mathrm{T}}
+\newcommand{\rex}{\, R_\mathrm{ex}}
+\newcommand{\rout}{\, R_\mathrm{out}}
+\newcommand{\rin}{\, R_\mathrm{in}}
+\newcommand{\zsp}{\, Z_\mathrm{sp}}
+\newcommand{\vex}{\, V_\mathrm{ex}}
+\newcommand{\vin}{\, V_\mathrm{in}}
+\newcommand{\circf}{\, \mathrm{circ}}
+\newcommand{\xringf}{\, \mathrm{xring}}
+\newcommand{\gax}{\, g_\mathrm{ax}}
+
+
+
+\begin{document}
+
+\title{Massively Parallel Markov Chain Monte-Carlo Software for Non-Linear Optimization and Equation Solving}
+
+\author{Leonid Benkevitch, Kazunori Akiyama}
+\affil{MIT Haystack Observatory, Westford MA}
+\email{benkev@haystack.mit.edu}
+
+\begin{abstract} \small 
+This document describes the software \verb|cuda_mcmc| designed to greatly accelerate solving various optimization problems using the NVIDIA graphics processing units (GPU) with the CUDA computing platform. We use a version of the Markov chain Monte-Carlo (MCMC) algorithm based on the Metropolis-Hastings sampler with replica exchange (MCMC-RE). We describe in detail both the algorithm itself and its mapping on the CUDA GPU architecture. Also, we explain how to write custom optimization/equation solving applications and provide several examples. \\
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+
+\section{Introduction and Motivation}\label{intro}
+
+In the problems on finding global extrema of non-linear functions, the gradient methods of optimization are powerless before multimodal functions, non-continuous functions, or functions some (or all) of whose arguments can only take discrete or integer values. Statistical methods can be more helpful for this class of problems. 
+
+The method described in this paper initially was used in a radio astronomy problem of a black hole event horizon imaging \citep{BenkevBHM}. The sparse (and scarce) data from the VLBI radio array pointed at the Sagittarius A* (Sgr A*) object, the super massive black hole at the center of our Galaxy, did not allow to use traditional imaging tools. However, some existing models could give approximate notion of the black hole look. We decided to create a model of the black hole image composed of simple geometric forms that allowed analytical Fourier transforms into the visibility domain. The model got the name ``\verb|xringaus|": its elements were ``slashed" cylinders and a Gaussian. Varying the geometry and intensities of the forms, the model was supposed to take approximate images of many of the black hole states. This gave a chance to measure some of the real black hole parameters. Finding the model whose brightness image is the closest to the one of the real black hole required fitting the model in visibility domain to the observation data. This was a problem on finding the parameters $\bfp=(p_1,p_2,...,p_{N_p})$ of the visibility model $x^{\rm mod}(\bfp,u_i,v_i)$ that would give the absolute (or global) minimum to the $\chi^2$ calculated as
+\begin{equation}
+  \label{chi2}
+  \chi^2(\bfp) = \sum_{i=1}^{N} \frac{(x^{\rm mod}(\bfp,u_i,v_i) - x_i^{\rm obs})^2}{\sigma_i^2},
+\end{equation}
+where $(u_i,v_i)$ were the coordinates of measured visibilities in the spatial frequency space, and the variance of every datum $\sigma_i^2$ played the role of its weight in the $\chi^2$ sum. The model had 9 parameters, so had $\chi^2$, and the problem was in finding the global minimum of the 9-dimensional hypersurface in the 10-dimensional space. The relief of this $\chi^2(\bfp)$ hypersurface was extremely complex, with innumerable creases and local minima, so the gradient methods appeared useless. 
+
+We created a massively parallel and highly efficient, problem-specific optimization code based on the CUDA computing platform to be run on the NVIDIA graphic cards (GPU). The code would take just seconds to fit our model to the observations. Subsequent modifications turned the code to a universal tool capable of fast solving general non-linear optimization problems and even solving systems of non-linear equations. 
+
+We briefly describe here the statistical method we used in our software, the Markov Chain Monte-Carlo (MCMC) with Replica Exchange. It is based on the idea of the Bayesian inference. 
+
+
+
+\section{Bayesian Inference}\label{bayesian}
+
+In the Bayes paradigm, the new information, the ``evidence", is used to update the ``prior" guess on the probability of a hypothesis, with the use of the well known Bayes' theorem
+\begin{equation}
+  \label{bayes_rule}
+  P(A|B) =  \frac{P(B|A)P(A)}{P(B)}.
+\end{equation}
+From the prior probability of event $A$, $P(A)$, its posterior probability, $P(A|B)$, is inferred, having the evidence $P(B)$ and the likelihood $P(B|A)$. Instead of single events $A$ and $B$ and their (conditional) probabilities the probability distributions defined on generally multidimensional spaces can be considered. The Bayes' theorem (Eqn.~\eqref{bayes_rule}) can be used to calculate the posterior distribution at any point using the values of the three other distributions. In case of the model fitting this is used to obtain the posterior distribution of the fitted model parameters from the distribution of the observation data and the ``prior" model parameter distribution. Numerically it can be implemented as  probing the parameter space evenly enough to get the sufficiently dense set of points to plot the histogram of posterior distribution. Its maximum (or maxima) will be at the best-fit parameter values.
+
+The optimization problem of fitting the radio observations $x_i^{\rm obs}$ to the visibility model $x^{\rm mod}$ by varying the model parameters $\bfp$ can be formulated as minimization of Eq.~\eqref{chi2}:
+\begin{equation*}
+  \label{chi2_nonumber}
+  \chi^2(\bfp) = \sum_{i=1}^{N} \frac{(x^{\rm mod}(\bfp,u_i,v_i) - x_i^{\rm obs})^2}{\sigma_i^2}  \rightarrow {\min\limits_{\bfp}},
+\end{equation*}
+
+We assume that the specific set of observed data $x_i^{\rm obs}$ presented as a vector $\bfx$ (visibility amplitudes and closure phases) is a sample from the multidimensional random variable, ${\bf X}$, with the probability density distribution $P({\bf X})$. For a sample $\bfx$, $P(\bfx)$ is a single number, the value of $P({\bf X})$ at the point $\bfx$. Further, the lower case letters are used instead of the capitals, so $P(\bfx)$ actually means $P({\bf X})$.
+
+Within the Bayesian framework both the observed data set $\bf{x}$ and the model parameter vector $\bfp$ are considered as statistically linked multi-dimensional random variables with their joint probability distribution
+\begin{equation}
+  \label{joint_ux}
+  P(\bfp,\bfx) =  P(\bfp|\bfx)P(\bfx) = P(\bfx|\bfp)P(\bfp),
+\end{equation}
+where ``," reads ``and". Relationship \eqref{joint_ux} associates the probability densities named as follows:
+\begin{itemize}
+  \item[-] $P(\bfx)$ the evidence,
+  \item[-] $P(\bfp)$ the prior or prior distribution,
+  \item[-] $P(\bfx|\bfp)$ the likelihood, and
+  \item[-] $P(\bfp|\bfx)$ the inference or the posterior probability distribution.
+\end{itemize}
+In terms of causality, the object under observation is the cause, and the observation data is the effect. The Bayes' theorem allows us to rearrange the cause and the effect: using the known data $\bfx$, compute the \emph{posterior} probability distribution $P(\bfp|\bfx)$ that $\bfx$ is an effect of the object represented by our model with the parameter set $\bfp$. Thus, we pose a task to find not just a single set of the ``optimal" model parameters, but the probability distribution of this set over the parameter space \emph{given} the actual set of observation data. Of course, we are interested in such distributions for every single parameter, which are the marginal distributions of $P(\bfp|\bfx)$. Below is shown that MCMC allows direct rendering of these marginal distributions. 
+
+So far, the Bayesian distributions have been treated in terms of the visibility model fitting to the observation data. However, nothing can prevent us from formulating any optimization problem using the Bayesian approach. Consider a problem of finding the optimal solution of an overdetermined system of non-linear equations ${\bf F}(\bfp) = \bfx$, where $N > N_p$, ${\bf F} = [f_1, f_2, ... f_N]^{\uT}$, $\bfp = [p_1, p_2, ... p_{N_p}]^{\uT}$, and $\bfx = [x_1, x_2, ... x_N]^{\uT}$. The equations in the system are $f_i(\bfp) = x_i$, $i = \overline{1,\;N}$. Generally, the system has no roots. However, the problem can be set to find the optimal parameters $\bfp$ that provide the minimum discrepancy between the left- and the right hand sides. This is the well-known problem of least-squares solution (LSS), and it is formulated as   
+\begin{equation}
+  \label{vector_optimization_problem}
+  \chi^2(\bfp) = \sum_{i=1}^{N} \frac{(f_i(\bfp) - x_i)^2}{\sigma_i^2}  \rightarrow {\min\limits_{\bfp}},
+\end{equation}
+Here the ``data" $\bfx$ can be just a vector of zeros, $\bfx~\equiv~{\bf 0}$. Moreover, the same MCMC procedure can find \emph{all} the roots $\bfp_k$ of a non-linear system of simultaneous equations ${\bf F}(\bfp) = {\bf 0}$, if it is consistent and the size of vector $\bfp$ equals the number of equations $N$:
+\begin{equation}
+  \label{vector_optimization_problem}
+  \chi^2(\bfp) = \sum_{i=1}^{N} \frac{f_i^2(\bfp)}{\sigma_i^2}  \rightarrow {\min\limits_{\bfp}}.
+\end{equation}
+The roots will sit at the locations $k$ where $\chi(\bfp_k)$ is close to zero.
+
+The problem of minimization of a single function of several variables $x = f(\bfp)$ is quite trivial:
+\begin{equation}
+  \label{optimization_problem}
+  \chi^2(\bfp) =  \frac{f^2(\bfp)}{\sigma^2} \rightarrow {\min\limits_{\bfp}}.
+\end{equation}
+Here the ``data" $x$ is just a zero. The $\chi^2$ is simply $f^2/\sigma^2$. In problems like the mentioned above, all the variances $\sigma_i^2$ can be set to the same nonzero value, for example, to unity. The Bayesian inference is obviously applicable to this class of problems.
+
+
+The likelihood $P(\bfx|\bfp)$ may be any positive function that reaches its maximum when the difference between the actual data and the model data becomes zero. We use a Gaussian likelihood
+\begin{equation}
+  \label{gaussian_likelihood}
+  P(\bfx|\bfp) = \left(\prod_i \frac{1}{\sqrt{2 \pi} \sigma_i} \right) e^{-\frac{1}{2}\chi^2},
+\end{equation}
+where $\chi^2$ and $\sigma$ are from Eq.~\eqref{chi2}.
+The prior, $P(\bfp)$, is the distribution over the parameter space that represents our preliminary knowledge about the intervals where the parameter values could be present.
+%, or sometimes algebraic inequalities relating several parameters.
+The prior may not be very informative (for example, a uniform value within the allowed interval and zero outside), but it must always be provided.  
+
+
+Dividing \eqref{joint_ux} by $P(\bfx)$ yields the Bayes' formula:
+\begin{equation}
+  \label{bayes_formula}
+  P(\bfp|\bfx) =  \frac{P(\bfx|\bfp)P(\bfp)}{P(\bfx)},
+\end{equation}
+with the searched for posterior parameter distribution on the left hand side, and computable probabilities on the right hand side. The value of $P(\bfx)$, the probability density of the given observation data sample, can be calculated using the total probability law,
+\begin{equation}
+  P(\bfx) = \int P(\bfx|\bfp)P(\bfp) \ud \bfp.
+\end{equation}
+For a given prior and a model the evidence $P(\bfx)$ is always a single constant value as long as we work with the same data set: the integration over the whole parameter space removes all the variables. The evidence value can be used to compare the quality of different models. A ``better" model will have larger $P(\bfx)$. The Bayes' theorem thus takes the form
+\begin{equation}
+  \label{post_distr_int}
+  P(\bfp|\bfx) =  \frac{P(\bfx|\bfp)P(\bfp)}{\int P(\bfx|\bfp)P(\bfp) \ud \bfp}.
+\end{equation}
+As we already said, the posterior distribution of all the parameters, $P(\bfp|\bfx)$, is not as interesting as that of an individual parameter, $P(p_i|\bfx)$, $p_i \in \bfp$, because it can provide the information on the mean value (or values, if multi-modal) and uncertainty of the estimate of the parameter $p_i$. Such individual distributions for every parameter $p_i$ are, in effect, the marginal distributions, i.e. the results of integration of the total distribution $P(\bfp|\bfx)$ over the parameter subspace spanned by all the parameters but $p_i$:
+\begin{equation}
+  \label{param_post_distr}
+  P(p_i|\bfx) =  \int P(\bfp|\bfx)\ud p_1 \ud p_2 ... \ud p_{i-1} \ud p_{i+1} ... \ud p_N.
+\end{equation}
+The posterior distributions, $P(p_i|\bfx)$, are not required to be normalized, so the strict equations~\eqref{bayes_formula} or~\eqref{post_distr_int} can be relaxed to a mere proportionality
+\begin{equation}
+  \label{bayes_propor}
+  F(\bfp|\bfx) \propto P(\bfx|\bfp)P(\bfp),
+\end{equation}
+where $F(\bfp|\bfx) \propto P(\bfp|\bfx)$. Normalization of the $F$ function would produce the posterior distribution $P(\bfp|\bfx)$ and its marginals $P(p_i|\bfx)$. However, statistical parameters of $P(p_i|\bfx)$ -- the means and the standard deviations, or qualitative conclusions about their forms -- can be found directly from $F(p_i|\bfx)$ without the normalization. The Metropolis-Hastings algorithm described here utilizes this fact. It draws many samples from the $P(p_i|\bfx)$ distributions, and the result of optimization, $\bfp$, is obtained from the histograms built using the saved samples. 
+
+
+
+
+\section{Markov Chain Monte Carlo as Implementation of Bayesian Inference}
+
+The Bayesian inference is applied to the optimization problems where the target functions are non-smooth multidimensional hypersurfaces, e.g., $\chi^2$ in case of finding the best-fit model parameters. Because of the innumerable local minima, the random exploration of the whole domain and finding the approximations of parameter distributions appears to be preferred to the gradient descent methods. 
+We use a strong algorithm named Markov Chain Monte Carlo (MCMC) with Replica Exchange (or Parallel Tempering) based on the improved Metropolis-Hastings algorithm. 
+
+
+\subsection{Metropolis-Hastings Algorithm}
+
+The algorithm has three stages. First, an initial set of parameters $\bfp_0$ is randomly drawn from the prior distribution $P(\bfp)$. The two other stages, the burn-in and the search, are essentially the same except at the burn-in stage the optimal steps for each parameter are picked. The iterations generate the Markov chain of the parameter tuples $\bfp_i = \left(p_{i,1},\, p_{i,2},\, ...\, p_{i,N_p} \right)$, and the more iterations, the better the $\bfp_i$ values approximate $P(\bfp|\bfx)$. The Markov property, i.e. the dependence of the $i_{\rm th}$ chain element on the previous $(i-1)_{\rm th}$ element only is ensured by the method of their generation. At each iteration, a \emph{proposal} model parameter set $\bfp^\prime$ is generated from the proposal distribution $q(\bfp_{i-1};\bfp^\prime)$. The new proposal set is randomly accepted or rejected with a probability $\alpha$,
+\begin{equation}
+  \label{accept_probab}
+  \alpha =  \min \left( \frac{P(\bfx|\bfp')P(\bfp')q(\bfp_{i-1};\bfp')} 
+            {P(\bfx|\bfp_{i-1})P(\bfp_{i-1})q(\bfp';\bfp_{i-1})}, 1 \right).
+\end{equation}
+In the Metropolis-Hastings algorithm the proposal distribution $q(\bfp_i;\bfp_j)$ generally does not necessarily \emph{have to} be symmetric. However, the question of the best choice of $q$ is still unclear. In order to simplify the calculations, we use a symmetric proposal distribution $q$ as in the original Metropolis algorithm. Here it is  assumed a Gaussian distribution
+\begin{equation}
+  \label{gaussian_prop_distr}
+  q(\bfp_i;\bfp_j) = \prod^{N_p}_{k} \frac{1}{\sqrt{2 \pi \sigma^2_k}} 
+                   \exp \left( \frac{(p_{j,k} - p_{i,k})^2}{2 \sigma^2_k} \right).
+\end{equation}
+Since $q(\bfp_{i-1};\bfp') \equiv q(\bfp';\bfp_{i-1})$, the acceptance probability is simplified to
+\begin{equation}
+  \label{accept_probab2}
+  \alpha =  \min \left( \frac{P(\bfx|\bfp')P(\bfp')} {P(\bfx|\bfp_{i-1})P(\bfp_{i-1})}, 1 \right).
+\end{equation}
+Obviously, the numerator and denominator in~\eqref{accept_probab2} are the right hand sides of~\eqref{bayes_propor} for the new and previous $\bfp$, respectively, which in turn are proportional to the desired probability distribution. If the probability of proposal $\bfp^\prime$ set is greater, then $\alpha = 1$, and $\bfp^\prime$ becomes the new parameter set unconditionally. Due to the Gaussian likelihood, i.e. uncertainty in the observations~\eqref{gaussian_likelihood}, the acceptance probability $\alpha$ becomes
+\begin{eqnarray}
+  \label{accept_probab3}
+  \alpha =  \min \biggl( \exp \left\lbrace -\frac{1}{2}\left( \chi^2(\bfx;\bfp') - 
+                        \chi^2(\bfx;\bfp_i) \right)  \right\rbrace     \times              \nonumber \\
+            \frac{P(\bfp')} {P(\bfp_i)}, 1 \biggr) .    
+\end{eqnarray}
+If the proposed parameter set were accepted only in case $\alpha=1$ when the new point is necessarily better (with lower $\chi^2$) than the previous one, the algorithm would be the basic random Monte-Carlo search. Unfortunately, the basic random search suffers from the ``curse of dimensionality": the rejection probability exponentially grows with the number of dimensions. Hence, a basic random search of many parameters will last forever. \citet{Metropolis_etal_1953} suggested a way out: accept not only $\chi^2$-better parameter sets, but also the sets that worsen $\chi^2$, but accept it with the probability $\alpha$. This technique ensures the ``random walk" of $\bfp_i$, exploring the parameter space and visiting the volumes with better posterior probability more frequently than others. If the proposal set is rejected, the previous state will be repeated in the chain.
+
+For models with many parameters the acceptance probability $\alpha$ tends to become small if all the parameters are stepped simultaneously, lowering the rate of acceptance and the overall algorithm efficiency. For this reason at each iteration we step only one parameter, keeping others constant. The following pseudocode describes one MCMC algorithm iteration:
+\begin{enumerate}
+\item Randomly choose $p_{i-1,j}$ from $\bfp_{i-1}$, parameter number $j$ uniformly distributed;
+\item Generate the $j$-th proposal parameter $p_{i-1,j}$ from the Gaussian distribution;
+\item Calculate $\alpha$ and accept or reject $p_{i-1,j}$ with probability $\alpha$;
+\item Repeat 1-3 for $N_p$ times; Memorize the newly generated state as $\bfp_i$.
+\end{enumerate}
+
+The efficiency of this algorithm is also sensitive to the step size of proposal distribution~\eqref{gaussian_prop_distr}, which is determined by the variance of the Gaussian distribution. If it is too small, most of the trial points are accepted, but the random walk is too slow to sample all the parameter space. Conversely, if the step is too large, most of the trial points are rejected and the MCMC algorithm can get stuck at a certain point for a long time despite the ability to make large jumps. Previous empirical studies recommend optimizing the step size to make the accept rate $\sim 25$\% in high-dimensional cases \citep[see references in][]{Gregory2005}. The second, burn-in stage of MCMC is intended to adaptively adjust steps for all the parameters. After updating a $j^{th}$ parameter $p_{i,j}$, if the accept rate of newest 100 trials is more than 30\%, then the variance $\sigma_j$ is multiplied by 1.01. Otherwise, if the accept rate of newest 100 trials is less than 20\%, the STD $\sigma_j$ is divided by 1.01. 
+
+
+
+\subsection{Replica Exchange MCMC Algorithm}
+
+The described Metropolis-Hastings MCMC algorithm is quite suitable for our problems where the direct sampling is complicated or impossible. However, the original Metropolis-Hastings MCMC algorithm can fail to fully explore the target probability distribution, especially if the distribution is multi-modal with widely separated peaks. The algorithm can get trapped in a local mode and miss other regions of parameter space that contain significant probability. 
+
+The replica-exchange MCMC algorithm (also known as parallel tempering) is a result of improvement of the MCMC algorithm targeted to such complex multi-modal distributions. The replica-exchange algorithm belongs to the class of ``generalized-ensemble algorithms". It has been developed mostly in the past decade and recently was applied to some astronomical problems \citep{Gregory2005,Varghese_etal2011,Benneke_Seager2012}. In this method a parameter $\beta$ called ``temperature" is introduced as
+\begin{eqnarray}
+  \label{post_distr_beta}
+  P(\bfp|\bfx;\beta) &=&  \frac{P(\bfx|\bfp)^\beta P(\bfp)}{\int_{\bfp} \int_{\beta} 
+                              P(\bfx|\bfp)^\beta P(\bfp) \ud \bfp \ud \beta} \nonumber \\
+      &\propto& P(\bfx|\bfp)^\beta P(\bfp)  .
+\end{eqnarray}
+When $\beta=1$, it becomes the target posterior distribution. For the Gaussian likelihood \eqref{gaussian_likelihood} the latter can be rendered as
+\begin{equation}
+      P(\bfp|\bfx;\beta) \propto \exp \left( \beta L(\bfx|\bfp) \right) P(\bfp),
+\end{equation}
+where $L(\bfx|\bfp)$ is a log-likelihood. The term ``temperature" is borrowed from the canonical distribution $\exp \left( -\beta E \right)$ in statistical mechanics, where the absolute temperature is expressed using the ``thermodynamic $\beta$" written as 
+\begin{equation}
+	\beta = \frac{1}{kT},
+\end{equation}
+so $\beta$ is inversely proportional to the temperature. Using this analogy one can see that in Eq.~\eqref{post_distr_beta}  the log-likelihood $L(\bfx|\bfp)$ plays the role of negative energy $-E$. Higher temperatures (those with smaller $\beta$) make the likelihood function flatter and also make the Metropolis-Hastings acceptance probability $\alpha$ higher, because
+\begin{eqnarray}
+  \label{accept_probab_beta}
+  \alpha = \min \biggl( \exp \left\lbrace -\frac{\beta}{2}\left( \chi^2(\bfx;\bfp') - \chi^2(\bfx;\bfp_i) \right)
+              \right\rbrace \nonumber \\
+         \times  \frac{P(\bfp')} {P(\bfp_i)}, 1 \biggr).  
+\end{eqnarray}
+Thus, the Metropolis-Hastings sampling at higher temperatures enables exploration of wider ranges of the parameter space. 
+
+In the replica exchange MCMC algorithm, multiple Markov chains with different temperatures $(\beta_1,\beta_2, ... \beta_{N_\beta})$ including a chain with the lowest temperature $\beta=1$ and different initial conditions are generated in parallel. The specific values of $\beta_l$ usually span several orders of magnitude with logarithmic steps. As an example, 40 Markov chains may have $10^{-4} \leqslant \beta_l \leqslant 1$ with $l \in \overline{1\,..\,40}$. At each MCMC iteration, when the generation of new sets of parameters $\bfp_{i,l}$ is finished in all the chains, the newly generated elements of adjacent chains at the temperatures $\beta_l$ and $\beta_{l+1}$ are exchanged with a probability $\alpha$ written as
+\begin{equation}
+  \label{exchange_probab}
+  \alpha =  \min \left( \frac{P(\bfp_{i,l+1}|\bfx; \beta_{l+1})} 
+            {P(\bfp_{i,l}|\bfx; \beta_{l})}, 1 \right) .
+\end{equation}
+The exchange procedure is repeated for $N_\beta - 1$ times, after which a new parameter $\bfp_{i+1}$ generation begins. Under the Gaussian  likelihood \eqref{gaussian_likelihood} and the Gaussian proposal distribution \eqref{gaussian_prop_distr} it becomes
+\begin{eqnarray}
+  \label{accept_probab_beta2}
+  \alpha &=& \min \biggl( \exp \biggl\lbrace -\frac{1}{2}(\beta_{l+1} - \beta_{l}) \nonumber \\
+         &&\times  \Bigl( \chi^2(\bfx;\bfp_{i,l}) -
+                 \chi^2(\bfx;\bfp_{i,l+1}) \Bigr) \biggr\rbrace  \nonumber \\
+         &&\times \frac{P(\bfp')}{P(\bfp_i)}, 1 \biggr)      .
+\end{eqnarray}
+In the higher temperature distributions $(\beta \ll 1)$, radically new configurations are explored, while lower temperature distributions  $(\beta \approx 1)$ allow for detailed exploration of new configurations and local modes. The final inference on the model parameters is based on samples drawn from the target probability distribution $(\beta=1)$ only.
+
+
+
+
+\section{MCMC-RE GPU Implementation Details}
+
+A single Markov chain itself cannot be computed in parallel, for each new ``chain link"
+requires computing the previous one. However, in the Replica Exchange
+version of MCMC several tens of Markov chains for different temperatures
+are to be computed, and this can be done in the hardware parallel threads
+on a GPU. Moreover, to multiply chances of the algorithm convergence
+to the solution in shorter time, several such multi-temperature multi-thread 
+processes can be run in parallel.
+
+In this section we describe the implementation internals most of which are hidden 
+from the user ``under the hood". However, they can help one understand how to 
+use the upper-level, user-friendly software.
+
+
+\begin{figure}[ht!]    %[b]
+\plotone{mcmc_cuda_hardware.eps}
+\caption{\small Two-level NVIDIA GPU architecture in terms of CUDA platform, GPU hardware, and MCMC-RE implementation.
+\label{mcmc_cuda_hw}}
+\end{figure}
+
+
+\subsection{Mapping MCMC-RE Algorithm on CUDA Architecture}
+
+The CUDA software platform provides a two-level thread organization: a grid of 
+blocks, where each block contains multiple threads. It is shown in Fig.~\ref{mcmc_cuda_hw}.
+In terms of the NVIDIA GPU hardware, each block of threads is executed on
+one of the Streaming Multiprocessors (SM). However, the architecture is
+totally scalable, each SM can execute multiple blocks. The numbers differ
+from model to model. For example, the GPU of GeForce GTX 670 videocard
+has 7 SMs, with 192 processor cores per an SM. Another videocard,
+GeForce GTX 1050 Ti, has 6 SMs, each containing 128 processor cores. 
+
+The massively parallel MCMC-RE implementation fits in naturally with the
+GPU architecture. The group of Markov chains running in parallel for all the set 
+of temperatures make up a block of threads. We call such group a \emph{sequence}.
+In terms of MCMC-RE the number of treads in one block is the number of 
+temperatures $N_\beta$, and the number of blocks is the number of independent
+sequences $N_{\rm seq}$. The user can set these variables to any numbers.
+We prefer to use $N_\beta = 32$ because the unit of parallel execution, a
+\emph{warp}, consists of 32 threads. Several warps can be simultaneously 
+run on the same Streaming Multiprocessor (SM), so multiples of 32 are
+preferred for $N_\beta$. However, we do not see any advantages in having
+more than 32 temperatures.  The value of $N_{\rm seq}$ may be arbitrary.
+It can be found experimentally as that providing the fastest computation. 
+Intuitively clear, though, that $N_{\rm seq}$ should not be less than the
+number of hardware SMs, and it would be reasonable to set it to a multiple
+of the SM numver. In the subsections describing the arrays
+used by the MCMC-RE code one can notice that many of them have 
+two additional dimensions \verb|[nbeta,nseq]|, which corresponds to
+$N_\beta$ and $N_{\rm seq}$.
+
+The CUDA C language built-in variables allow a thread to always
+know in which block it is running and what is its own thread number 
+within the block: \verb|blockIdx| and \verb|threadIdx|. Two more variables,
+\verb|blockDim| and \verb|threadDim|, contain the values of total number
+of blocks and total number of threads in a block, respectively. Therefore,
+in the MCMC-RE CUDA code the following, where possible, is observed: \\
+\verb|blockDim| $ = N_{\rm seq}$, \verb|threadDim| $ = N_\beta$, \\
+\verb|blockIdx| $ = i_{\rm seq}$, the sequence index, and \\
+\verb|threadIdx| $ = i_\beta$, the temperature index. 
+
+The MCMC algorithm was initially used for fitting parameterized models
+to large arrays of data located at many coordinate points, like model 
+of a celestial radio object observed with a radio interferometer. 
+The data there are the visibilities, and the coordinates are
+$u$ and $v$, the locations of visibilities in the spatial frequency domain.
+This is why the input arrays are called \verb|dat| and \verb|coor|.
+The data are provided to the algorithm in the \verb|dat[ndat]| array, and
+the coordinates -- in the \verb|coor[ncoor]| array.  
+Sometimes the model requires
+integer data, passed in the integer array \verb|idat[nidat]|, and integer
+coordinates (like antenna numbers) passed in the \verb|icoor[nicoor]| array.
+However,  in other applications the arrays \verb|dat, coor, idat, icoor| 
+can be used arbitrarily. Note that the whole of \verb|dat[ndat]| content, 
+and only it, is used to compute $\chi^2$. On the same reason all the functions
+to be optimized are located in the file \verb|model.cuh|. It contains the 
+only C/C++ function \verb|model()|. In order to create an application to
+solve a new problem, the user must write its own \verb|model()| function.
+
+The \verb|model()| function calculates only one 
+number and stores it in a specified location of the \verb|datm[ndatm]| array. 
+When writing the code of \verb|model()| function it is important to understand
+the general picture of what is going on. The two arrays are of special importance: 
+\verb|dat[ ]| and \verb|datm[ ]|. They are immediate mappings of the data 
+described in Sections~\ref{intro} and \ref{bayesian}: \verb|dat[i]| is $x_i^{\rm obs}$ and 
+\verb|datm[nbeta,nseq,i]| is $x_i^{\rm mod}$ (or $f_i$ in another context).
+We are looking for the best, optimal set of the function parameters $\bfp$ that secure 
+the global minimum for $\chi^2(\bfp)$.
+The parameters, for instance, can be tuples of the \verb|xringaus| model parameters \\
+$\bfp = (Z_{\rm sp}, \rex, \rin, \ d, \ f, \ a, \ b, \ g_q, \ \theta)$. \\  
+At the beginning of each iteration we have $N_\beta \times N_{\rm seq}$ of such 
+parameter sets. The \verb|gen_proposal| function randomly selects in each tuple
+a single parameter and adds to it a random step, all in parallel. As all 
+the $N_\beta \times N_{\rm seq}$ parameter tuples (or sets) are ``stepped", and 
+the function (or model) being optimized needs to be called many times to create the
+``model" data sets, each with the same number of elements, $N_{\rm dat}$, as 
+in the \verb|dat[ ]| array. This model calculation occurs totally in parallel:
+the \verb|model()| function is called once for each one datum in \verb|datm[ndatm]|,
+or in $N_\beta \times N_{\rm seq} \times N_{\rm dat}$ threads. This number of
+threads is $N_{\rm dat}$ times more than $N_\beta \times N_{\rm seq} $ used by 
+the MCMC algorithm. Therefore, the kernel \verb|calc_chi2_terms()| that calls 
+\verb|model()| and, in each thread, calculates a single term of $\chi^2$ sums,
+is invoked in as many of 64 thread blocks as needed. At each thread
+\verb|model()| is provided with the index into \verb|pcur[ ]| to get the correct
+$(j_\beta,k_{\rm seq})$-th 
+parameter set, the index into \verb|dat[ ]|, and the index into \verb|datm[ ]|, 
+where the computed value should be saved.
+
+After that, all the $N_\beta \times N_{\rm seq}$ ``model" data sets are
+compared with the only data set in \verb|dat[ndat]| by computing 
+$N_\beta \times N_{\rm seq}$ values of $\chi^2$, (in terms of the software) as 
+\begin{equation} \label{chi2_soft}
+  \chi^2_{j_\beta,k_{\rm seq}} = \sum_{i=1}^{N_{\rm dat}} 
+     ({\rm datm[j_\beta,k_{\rm seq},i]} - {\rm dat[i]})^2 \times {\rm std2r[i]},
+\end{equation}
+and some of the new parameter tuples are accepted and some rejected, according 
+to the Metropolis algorithm in the \verb|spmp_mcmc()| function. 
+
+To compute $\chi^2$ the algorithm requires the variance ${\sigma^2}$.
+The \verb|std2r[ndat]| array should contain the reciprocals $1/\sigma^2$ 
+of the data variances. This format is chosen out of the speed considerations,
+since the massive divisions by $\sigma^2$ in the $\chi^2$ calculations are 
+several times slower than the multiplications by $1/\sigma^2$. 
+
+The MCMC with replica exchange is implemented as a function \verb|mcmc_cuda()|
+(in the file \verb|mcmcjob.cu|) called by the Cython-compiled interface extension 
+module \verb|mcmc_interf.so| (the source Cython script is in \verb|mcmc_interf.pyx|).
+In turn, \verb|mcmc_cuda()| creates \verb|mcmcobj| as an instance of the class 
+\verb|CMcmcFit| (defined in \verb|mcmcjob.cuh|). This object at the time of its creation
+transfers the arrays to GPU and calls the class method \verb|do_mcmc_on_gpu()|
+(also in \verb|mcmcjob.cu|). It, in turn, calls the \verb|run_mcmc()|, a CUDA C 
+function determined with the rest of CUDA MCMC code in \verb|gpu_mcmc.cu|. 
+
+In the Python codes the types of the parameters must strictly correspond to 
+their  C and C++ analogs. Note that the implementation of CUDA MCMC-RE described
+here uses the single precision 32-bit floats and 32-bit integers, \verb|float| 
+and \verb|int|. Their Python analogs are \verb|np.float32| and \verb|np.int32|, 
+where \verb|np| is the standard \verb|numpy| module. For the optimization problems 
+the single precision appeared to be sufficient. Also, the GPU works faster with the 
+single precision numbers, and they take less of the GPU memory.
+
+
+\begin{figure}[ht!]    %[b]
+\plotone{gpu_mcmc_software_hierarchy.eps}
+\caption{\small Parallel MCMC-RE software hierarchy.
+\label{mcmc_soft_hierarchy}}
+\end{figure}
+
+
+
+
+\subsection{Parallel MCMC-RE software hierarchy}
+
+The MCMC software has been written in C/C++ and Python and includes several levels. Their hierarchy is depicted in Fig.~\ref{mcmc_soft_hierarchy}. The top level Python module \verb|imgpu| (file \verb|imgpu.py|) contains two classes, a universal solver \verb|mcgpu| and its problem-specific heir, or subclass \\
+\verb|mcgpu_sgra(mcgpu)|, which is intended for solving a problem of fitting the Sgr A* black hole model to the observation data. 
+
+When a user creates an instance of either class, its constructor automatically creates and initializes all the variables and arrays needed for the MCMC execution. To start it, the user only needs to invoke the class method \verb|burnin_and_search()|. The two other methods, \verb|calcmodel| and \verb|calcmodchi2()|, allow fast computation of the model outputs (in case of \verb|mcgpu_sgra| -- visibilities, closure phases) and $\chi^2$ values for very large numbers of parameter sets in parallel on the GPU. The \verb|imgpu| module provides maximum convenience and makes application programs way shorter.
+
+The next level down in the hierarchy is presented by the \verb|mcmc_interf| module (file  \verb|mcmc_interf.so|) built from the Cython source code \verb|mcmc_interf.pyx|. It is a Python-C/C++ interface module whose functions, \verb|mcmcuda()|,   \verb|calcmodel()|,   \verb|calcmodchi2()|, and  \verb|reset_gpu()| call underlying C/C++ functions. They provide convenience of programming in Python. However, in order to directly use the functions from \verb|mcmc_interf| the user in the Python application has to correctly initialize all the variables and arrays.  
+
+The CUDA C/C++ file \verb|mcmcjob.cu| provides functions and classes forming the underlying level used by \verb|mcmc_interf|. The user writing the application codes in C/C++ can directly use the functions from \verb|mcmcjob.cu| or classes from \verb|mcmcjob.cuh|.    
+
+According to CUDA terminology, we call the CPU a ``host", and the physically separate GPU unit,
+working as a coprocessor, a ``device". We use NVIDIA graphic cards installed in
+the PCI-e slots. The host and the device possess their own separate memory spaces, the host 
+memory and the device (GPU) memory. Allocation of the device memory and moving the data to and from the device is controlled by the CPU C code through the CUDA runtime API functions.  
+
+Preparing the data arrays, the device memory allocation, moving the data to the GPU device memory before 
+the MCMC run and moving the generated data with the solution(s) back to the host memory after the MCMC run
+is performed by the \verb|mcmc_cuda()| function in \verb|mcmcjob.cu|. It uses the class \verb|CMcmcFit| derived from the class \verb|CCalcModel|. Declaring \verb|mcmcobj| as a class \verb|CMcmcFit| object triggers the class constructor that allocates device memory, moves the data to the device, and launches the \verb|do_mcmc_on_gpu()| method. The latter, in turn, calls \verb|run_mcmc()| in \verb|gpu_mcmc.cu|. Tho other functions, \verb|calc_model()| and \verb|calc_modchi2|, require only a small subset of the MCMC data. They create the \verb|modobj| instance of the base class \verb|CCalcModel|, whose constructor and destructor allocate/move much less data. 
+
+The last, lowest level of the hierarchy is located in the CUDA C/C++ file \verb|gpu_mcmc.cu|. In order to launch the massively parallel MCMC processes in the GPU memory, the class method \verb|CMcmcFit::do_mcmc_on_gpu()| calls the C program \verb|run_mcmc()| from \verb|gpu_mcmc.cu|. The GPU parallel processes are called \emph{kernels} and have the attribute \verb|__global__|. The MCMC implementation described here consists of several kernels, and they are called from the host code one after another, following the concept of "heterogeneous programming". 
+
+The MCMC ``driver" program \verb|run_mcmc()| on entry gets two arguments, both are the pointers to the \verb|CMcmcFit| class objects. The first one, \verb|mc_h|, points to the host memory and the object it points at has the host pointers to the host data arrays. The second argument, \verb|mc_d|, is a pointer into the GPU device memory, and its class member pointers are into the device memory. This device pointer is further used as a parameter for the kernels: due to it the kernels running on the GPU have full access to all the data in the device global memory.
+
+
+\subsection{Parameters of the MCMC-RE Algorithm} \label{algparams}
+
+Below is the list of parameters accepted by the \verb|mcmc_cuda()| function. 
+It resides in the \verb|mcmcjob.cu| file and can be called directly from a C/C++ code. 
+From Python it can be called from the module \verb|mcmc_interf| as \\
+
+\subsubsection{Input Parameters}
+
+\verb|mcmc_interf.mcmcuda()| with the same list of parameters.
+
+\verb|nptot|: total number of the parameters to be optimized by MCMC, or
+       the full problem dimensionality. Part of the parameters in the
+       \verb|ptotal[nptot]| array can be made immutable for a particular MCMC run
+       by setting zeros at the corresponding locations in the descriptor
+       array \verb|pdescr[nptot]|.
+
+\verb|nprm|: the number of parameters to be optimized by MCMC in a specific run.
+      It is possible to "freeze" values of a part of the problem parameters
+      making them immutable constants, and optimize only the rest of them.
+      The frozen (immutable) parameters must be marked by zeros at their
+      positions in the descriptor array \verb|pdescr[nptot]|. Thus \verb|nprm| is the
+      number of non-zero elements in \verb|pdescr[ ]|.
+
+\verb|ndat|: number of floating point data.
+
+\verb|ncoor|: number of floating point coordinates.
+
+\verb|nidat|: number of integer data.
+
+\verb|nicoor|: number of integer coordinates.
+
+\verb|nseq| $\equiv N_{\rm seq}$: number of independent parallel processes of model fitting. In CUDA
+      framework it means the number of thread blocks. In the NVIDIA
+      GPU hardware one block of threads is executed on one
+      "Streaming Multiprocessor" (SM). For example, GTX 670 has 7 SMs. 
+
+\verb|nbeta| $\equiv N_\beta$: number of ``temperatures" in the MCMC algorithm. In CUDA framework
+       it means the number of parallel theads per block. In NVIDIA GPU
+       the treads in a SM are executed in units of ``warps" of 32 threads
+       each executing the same instruction at a time.
+       
+\verb|seed|: an arbitrary 64-bit unsigned integer (np.uint64) seed for the CUDA
+      random number generator. 
+
+\verb|pdescr[nptot]|: array of parameter descriptors with possible values
+               2 - angular parameter (radians), 1 - nonangular parameter.
+               0 - this value excludes the corresponding parameter in
+                   \verb|ptotal[nptot]| from optimization.
+                   
+\verb|ptotal[nptot]|: array of model parameters. The \verb|ptotal[ ]| values at
+               the locations where \verb|pdescr[ ]| is nonzero are ignored.
+               The values where \verb|pdescr[ ]| is zero are used in the model.
+               
+\verb|pmint[nptot]|,
+
+\verb|pmaxt[nptot]|: minimum and maximum values for the model parameters.
+              The parameters are searched only inside of the
+              nptot-dimensional rectangular parallelepiped determined by
+              \verb|pmint[ ]| and \verb|pmaxt[ ]|. This parallelepiped determines the
+             ``prior".
+
+\verb|ivar[nprm]|: maps [nprm] optimized parameters on ptotal[nptot].
+            ivar[nprm] has indices of the ptotal[nptot] parameters whose
+            descriptors in pdescr[nptot] are non-zero.
+
+\verb|invar[nptot]|: maps ptotal[nptot] on the varied parameters [nprm]. If some
+              of the parameters are immutablem invar[ ] must contain -1 values
+              at the corresponding positions.
+
+\verb|beta[nbeta]|: ``temperature" values in descending order from 1. Recommended are
+             the values between 1 and 0.0001 falling off exponentially, i.e. as a geometric progression
+	         with common ratio $0.0001^\frac{1}{\mathrm{nbeta-1}}$, from 1 down to 0.0001.
+
+\verb|dat[ndat]|: input floating point data (e.g. visibility amplitudes, phases etc). 
+				  In the software, \verb|dat[i]| is the same as $x^{\rm obs}_i$ described
+				  in Sections~\ref{intro} and \ref{bayesian}.
+
+\verb|idat[nidat]|: input integer data.
+
+\verb|coor[ncoor]|: input floating point coordinates (e.g. u and v pairs).
+
+\verb|icoor[nicoor]|: integer coordinates (e.g. antenna numbers)
+             
+\verb|std2r[ndat]|: the reciprocals of the data variances, $1/\sigma^2_i$.
+
+\verb|pcur[nbeta,nseq,nptot]|: initial parameter values for all temperatures and
+                        all sequences. Can be zeros or random numbers or
+                        the coordinates of the prior center. During MCMC
+                        run is used for the current parameter values.
+
+\verb|tcur[nbeta,nseq]|: integer values of the ``temperature" indices. On entry it
+                  should contain nseq columns of cardinals from 0 up to
+                  \verb|nbeta-1|.
+
+\verb|n_cnt[nprm,nbeta,nseq]|: numbers of Metropolis trials for each mutable
+                        parameter, each temperature, and each sequence.
+                        Should be initialized to ones.
+
+\verb|nadj|: number of sets for calculating acceptance rates. Recommended value 100.
+
+\verb|npass|: number of times the \verb|model()| function must be called. Sometimes
+       the model computation requires several passes. The data generated and saved in a
+       previous pass are used in the next one. The \verb|model()| function
+       can determine at which pass it has been called by its parameter \verb|ipass|
+       taking values from 0 to \verb|npass-1|.
+
+\verb|pstp[nprm,nbeta,nseq]|: standard deviations of the parameter steps for each mutable parameter,
+                       each temperature, and each sequence. An actual step is generated as a normally
+                       distributed random number with the STD from \verb|pstp[ ]|.
+                       
+\verb|imodel|: an integer parameter passed to the \verb|model()| function. The usage is
+        arbitrary. For example, it may be a model number to select between
+        several models.
+
+\verb|nburn|: number of the burn-in iterations. During the burn-in phase the steps
+       for each parameter, each temperature, and each sequence are adjusted,
+       and the transients fall off.
+
+\verb|niter|: number of optimization iterations.
+
+\verb|ndatm|: must be equal \verb|nbeta*nseq*ndat|.
+
+%=============================================================================
+
+
+\subsubsection{Workspace Arrays}
+
+\verb|datm[nbeta,nseq,ndat]|: computed model data for the parameter tuples 
+							  $\bfp_{j_\beta, k_{\rm seq}}$. 
+							  In the software \verb|datm[ ]|
+							  represens $x^{\rm mod}_i(\bfp)$ or $f_i(\bfp)$ described
+							  in Sections \ref{intro} and \ref{bayesian}. However,
+							  due to the multiple parallel threads where $\chi^2(\bfp)$
+							  is computed  in many sequences $N_{\rm seq}$ for many 
+							  temperatures $N_\beta$, for each particular 
+							  $\chi^2_{j_\beta, k_{\rm seq}}$ calculation only a slice 
+							  of \verb|datm[ ]| array of the length $N_{\rm dat}$ is
+							  involved: \\
+							  \verb|datm[j_beta,k_seq,:]|. \\
+							  Normally \verb|datm[ ]| is used as a one-dimensional
+							  array \verb|datm[ndatm]|, 
+							  $N_{\rm datm} = N_\beta \times N_{\rm seq} \times N_{\rm dat}$.
+
+\verb|chi2m[nbeta,nseq,ndat]|: $\chi^2$ terms for each model data element, each
+                        temperature, and each sequence.
+
+\verb|rndst[nbeta,nseq,48]|: unsigned 8-bit integer \verb|(np.uint8)| array of states
+                      for the random number generator.
+
+\verb|flag[nbeta,nseq]|: 0 means the selected parameter is outside of the prior,
+                  or the parameter did not pass the alpha-test.
+                  1 means the selected parameter is OK.
+                  
+\verb|chi2c[nbeta,nseq]|: The $\chi^2$ values for each temperature and each sequence 
+                          memorized from the previous Metropolis step to be compared
+                          with the new ones.
+
+\verb|ptent[nbeta,nseq]|: tentative parameter values for each temperature and each
+                   sequence.
+
+\verb|ptentn[nbeta,nseq]|: tentative parameter indices for each temperature and each
+                    sequence.
+
+%=============================================================================
+
+
+
+\subsubsection{Output Parameters}
+
+\verb|pout[nprm,nbeta,nseq,niter]|: mutable parameter values found by the MCMC for
+                             all the temperatures, sequences, and iterations.
+                             As a rule, only the coldest temperature is used,
+                             i.e. \\
+                             \verb|pout[nprm,0,nseq,niter]|. \\
+                             The optimum parameter set is in \verb|pout[ ]| at the
+                             location corresponding to the minimum $\chi^2$
+                             in the \verb|chi2[nseq,niter]| array. Usually these
+                             arrays reshape to 1D form:\\ 
+                             \verb|po = pout[:,0,:,:].reshape((nprm,nseq*niter))|
+                             \verb|c2 = chi2.flatten()| \\
+                             and then the best parameter set is found as
+                             \verb|po[c2.argmin()]|. \\
+                             Also, the histograms of each
+                             parameter can provide important information: \\
+                             \verb|hist(po[0,:], 50, color='b')|
+                             \verb|grid(1)| - for the 0-th parameter and so on.
+
+\verb|chi2[nseq,niter]|: $\chi^2$ values for the highest temperature ($\beta=1$), 
+                         for all the sequences and iterations.
+
+\verb|n_acpt[nprm,nbeta,nseq]|: counting numbers of accepted proposal sets in the
+                         Metropolis-Hastings algorithm.
+
+\verb|n_exch[nbeta,nseq]|: counting numbers of exchanged adjacent temperature
+                    chanins in the replica exchange algorithm.
+
+\verb|n_hist[nadj,nprm,nbeta,nseq]|: counting numbers of ``accept" of proposal set
+                              in Metropolis-Hastings algorithm
+
+%=============================================================================
+
+
+\subsubsection{Output Parameters}
+
+
+
+
+
+\subsection{Parallel MCMC-RE Algorithm in CUDA C/C++}\label{kernels}
+
+At each call, a kernel needs two special parameters enclosed in the \verb|<<<>>>| brackets:
+the number of threads in the block, and the number of blocks in the grid. We run \verb|nseq|
+independent MCMC processes (``sequences"), one per a block, and each process runs \verb|nbeta|
+parallel threads, one per a temperature. Below the MCMC algorithm is described as a series of
+kernel calls with comments. These codes are in the file \verb|gpu_mcmc.cu|, function \verb|run_mcmc()|. \\
+
+1. Initialize the random number generators for all the $N_{\rm seq} \times N_{\rm beta}$ threads: \\ 
+\verb|  init_rng<<<nseq,nbeta>>>(mc_d);| \\
+
+2. Initialize the optimized parameters for every sequence and every temperature by assigning to them the random values uniformly distributed inside of the prior. They become the current parameters: \\
+\verb|  init_pcur<<<nseq,nbeta>>>(mc_d);| \\
+
+3. Compute all the $\chi^2$ terms like \\
+$({\rm datm}[i_{\rm beta},i_{\rm seq},i_{\rm dat}] - {\rm dat}[i_{\rm dat}])^2/\sigma^2[i_{\rm dat}]$, \\
+where \verb|dat[ndat]| are the observation data (visibility amplitudes and closure phases), and \\
+\verb|datm[nbeta,nseq,ndat]| are the results of computing \verb|nbeta x nsec| models. The $\chi^2$ terms are 
+saved in the array \verb|chi2m[nbeta,nseq,ndat]|. This computation is fulfilled in parallel on \verb|nblocks| with \verb|blocksize| threads per a block, arbitrarily set to 128. So, \\ 
+\verb|nblocks = nbeta*nseq*ndat/blocksize + 1|. \\
+
+The kernel is called in a loop \verb|npass| times with \verb|ipass| running from 0 to \verb|npass-1|: \\
+\verb|  calc_chi2_terms<<<nblocks,| \\ 
+\verb|              blocksize>>>(mc_d, ipass);| \\
+    
+4. From the terms in \verb|chi2m[nbeta,nseq,ndat]| compute  $\chi^2$ and store the values in the \\
+\verb|chi2m[nbeta,nseq]| array: \\
+\verb| calc_chi2<<<nseq,nbeta>>>(mc_d);| \\
+
+After the initialization the two MCMC stages follow: burn-in and main. At the burn-in stage 
+the step sizes in \verb|pstp[nprm,nbeta,nseq]|
+for each parameter in each sequence, and each temperature are adjusted based on the parameter acceptance/rejection rate calculated from the history being accumulated in \\
+\verb|n_hist[nadj,nprm,nbeta,nseq]|.
+ The burn-in stage 
+requires a few hundred iterations, which is usually less than that for the main stage. 
+Both stages are very similar. Actually, the burn-in is a ``dry run" of the MCMC-RE, where
+the steps are adjusted and 
+the \verb|replica_exchange()| kernel does not save in the array \\
+\verb|pout[nprm,nbeta,nseq,niter]| \\
+the new parameter sets found. At the burn-in stage the parameter \verb|burn| of \\
+\verb|replica_exchange(mc_d, burn, itr)| 
+ must be non-zero. At the main stage \verb|burn| is set to zero. \\
+
+4. Burn-in stage: \\\\
+\verb|  burn = 1;| \\
+\verb|  for (itr = 0; itr < nburn; itr++) {| \\
+\verb|    for (ipm = 0; ipm < nprm; ipm++) {| \\
+
+In \verb|gen_proposal()| to a randomly \\
+chosen parameter a random "Gaussian" step with the standard deviation from 
+\verb|pstp[nprm,nbeta,nseq]| is added. If the parameter gets outside of the prior, it is flagged by 0 in 
+\verb|flag[nbeta,nseq]|. Otherwise its index is 
+saved in
+\verb|ptent[nbeta,nseq]| as ``tentative": \\ \\
+\verb|      gen_proposal<<<nseq,nbeta>>>(mc_d);| \\
+
+Compute $\chi^2$ terms \verb|npass| times for \verb|ipass| from 0 to \verb|npass| - 1: \\ \\
+\verb|      calc_chi2_terms<<<nblocks,| \\
+\verb|             blocksize>>>(mc_d, ipass);| \\
+
+Single Parameter Metropolis MCMC. The proposed tentative parameter is accepted with a probability $\alpha$ calculated by the formula in Eq.~\eqref{accept_probab3}: \\ \\
+\verb|      spmp_mcmc<<<nseq,nbeta>>>(mc_d);| \\ \\
+
+Adaptive step adjustment for all the parameters. The steps are generated as Gaussian random values with the standard deviations (STD) individual for each parameter. If for a $j^{\rm th}$ parameter the acceptance rate of the latest 100 trials is more than 30\%, then its STD $\sigma_j$ is multiplied by 1.01. Otherwise, if the accept rate of newest 100 trials is less than 20\%, the variance $\sigma_j$ is divided by 1.01. \\ \\
+\verb|      adjust_steps<<<nseq,nbeta>>>(mc_d);|  \\
+
+In \verb|replica_exchange()| two randomly selected adjacent temperature chains exchange their parameters and $\chi^2$ with the probability calculated as given in Eq.~\eqref{accept_probab_beta2}. This is repeated
+$N_\beta-1$ times. Unfortunately, it cannot be parallelized into $N_\beta$ temperature threads, so $N_{\rm seq}$ independent MCMC processes execute this simultaneously in blocks with one thread per block: \\ \\ 
+\verb|    replica_exchange<<<nseq,1| \\
+\verb|                    >>>(mc_d, burn, itr);| \\
+\verb|  }| \\ \\
+
+
+5. Main stage. It is not commented because comments to the burn-in stage explain both stages. The only two differences are: \\
+-- the calls to \verb|adjust_steps()| are absent; \\
+-- the second parameter of \verb|replica_exchange()|, burn, is set to zero. \\
+This means that there is no step adjustment and that the output parameters 
+\verb|pout[ ]|, \verb|chi2[ ]|, and \verb|tout[ ]| are updated at each algorithm iteration. \\ \\
+\verb|  burn = 0;| \\\\
+\verb|  for (itr = 0; itr < niter; itr++) {| \\
+\verb|    for (ipm = 0; ipm < nprm; ipm++) {| \\\\
+\verb|      gen_proposal<<<nseq,nbeta>>>(mc_d);| \\\\
+\verb|      for (ipass = 0; ipass < npass;| \\
+\verb|                             ipass++) {| \\
+\verb|        calc_chi2_terms<<<nblocks,| \\
+\verb|              blocksize>>>(mc_d, ipass);| \\
+\verb|      }| \\
+\verb|      spmp_mcmc<<<nseq,nbeta>>>(mc_d);| \\
+\verb|    }| \\
+\verb|    replica_exchange<<<nseq,1| \\
+\verb|                    >>>(mc_d, burn, itr);| \\
+\verb|  }| \\
+
+6. The results are moved to the host memory. The parameters of the model, the coordinates of the absolute minimum, or the roots found in the MCMC main stage run are in the array 
+\verb|pout[nprm,nbeta,nseq,niter]|, and the $\chi^2$ values for the coldest temperature ($\beta=1$) are in the array \verb|chi2[nseq,niter]|. Using the latter, the best result in \verb|pout[ ]| can be found at the location of the $\chi^2$ minimum.
+
+
+ 
+\section{Using the MCMC-RE Software}
+
+In order to use the software for fast numerical solving a specific optimization
+problem, the user should write two programs: a script in Python and a CUDA C/C++ 
+function \verb|model()|. The Python script is intended for running the MCMC-RE 
+software, which, in turn, calls \verb|model()| in a highly parallel mode to 
+compute the function(s) to be optimized or the equations to be solved. 
+
+\subsection{Installation}
+
+The prerequisites include: 
+\begin{enumerate}
+  \item[-] an NVIDIA video card of the compute capability 2.0 or greater
+  \item[-] the NVIDIA CUDA Toolkit and NVIDIA driver installed
+  \item[-] gcc, g++
+  \item[-] Python
+  \item[-] Cython, the C/C++ extension to Python
+\end{enumerate}
+
+The current version of the CUDA MCMC-RE software works in Linux only. Its 
+installation does not require the root privileges. The software is in 
+\verb|cuda_mcmc.tar.gz| archive. Unpack it with the command \\\\
+\verb|$ tar xvfz cuda_mcmc.tar.gz| \\\\
+This creates the directory \verb"cuda_mcmc" with the following structure: \\
+
+\verb"cuda_mcmc" \\
+\verb"   |-- doc" \\
+\verb"   |-- src" \\
+\verb"   +-- template" \\
+\verb"   +-- examples" \\
+\verb"        |-- search_Rosenbrock" \\
+\verb"        |-- sgra_model_fit" \\
+\verb"        +-- solvsys" \\
+
+Enter the \verb"cuda_mcmc" directory and run \verb|make| command: \\\\
+\verb|$ cd cuda_mcmc| \\
+\verb|$ make| \\\\
+The command creates two directories if they have not existed yet in the user's 
+home directory: \verb|~/lib64/python| and \verb|~/bin|. They will be used 
+to install Python modules and binary codes, respectively. 
+These directories must be appended to the \verb|PYTHONPATH| and \verb|PATH| 
+environment variables. One more environment variable, \verb|CUDA_MCMC|, must
+point at the directory \verb|cuda_mcmc| from which \verb|make| has been invoked. 
+The following three lines are added to the end of user's \verb| ~/.bashrc| file: \\\\
+\verb|export PATH=$PATH:~/bin| \\
+\verb|export PYTHONPATH=$PYTHONPATH:~/lib64/python| \\
+\verb|export CUDA_MCMC=<path-to-mcmc_cuda>| \\
+
+When \verb|make| exits, it asks the user to run the command \\\\
+\verb|$ source ~/.bashrc| \\\\
+
+
+\subsection{Working on a Project}
+
+Just create a directory for your project in any location of your directory tree and
+copy there the contents of \verb|$CUDA_MCMC/template|. Along with the \verb|Makefile|
+and \verb|README.txt| it contains two other files: \verb|model.cuh| and 
+\verb|template.py|.  
+
+The user is responsible for writing two programs: the backend and the frontend.
+The backend is the \verb|model()| function contained in the \verb|model.cuh| file.
+This is a CUDA kernel that runs inside the GPU and includes the codes for
+computing the user's function(s) to be optimized. The frontend is a Python or C/C++
+program that uses the primitives of one of the MCMC-RE software layers to run
+the parallel optimization process and to present the results in printed and graphic
+forms: plots, histograms etc. 
+
+Rename \verb|template.py|
+into a desired name. This is a frontend script that contains the general scheme 
+of running the MCMC-RE software with the use of the high-level Python class \verb|Mcgpu|. 
+The backend, the \verb|model.cuh| file, should be also edited to include the codes for 
+user's function(s). 
+
+When both Python script and 
+\verb|model.cuh| are ready, just run \verb|make|. The CUDA software in
+\verb|$CUDA_MCMC/src| will be compiled with \verb|model.cuh| included from \
+your project directory and the Python extension module \verb|mcmc_interf.so|
+will be built and copied to \verb|~/lib64/python|. Running the Python script
+will start the MCMC-RE algorithm with your project's \verb|model.cuh|. 
+
+
+\subsection{Writing the model() function to be optimized}
+
+For each individual fitting, optimization, or equation solving problem the user needs to write the \verb|model()| function, compile it and link it with the rest of the code. This function computes the optimized expression(s) working in parallel in all the threads of all the blocks. This function should be determined in a CUDA header file \verb|model.cuh|.
+
+The \verb|model()| function is only called from the GPU device, from the kernel \\
+\verb|calc_chi2_terms()|, so it has the attribute \verb|__device__| (i.e. callable from the GPU device only). Initially this function was intended to compute the model visibilities and closure phases of the supermassive  black hole at our Galaxy center observed with the VLBI array, hence the function name. However, it can be written to compute the left hand side of a vector or scalar expression like ${\bf F}({\bf x}, {\bf v}) = 0$.
+The MCMC is able to search for the absolute minimum of the expression, or search for its multiple minima in the space determined by the parameter vector ${\bf x}$, while ${\bf v}$ are some arbitrary parameters set by the user. If ${\bf F}({\bf x}, {\bf v}) = 0$ is a consistent system of equations, MCMC is able to find all of its roots.
+
+Each \verb|model()| call computes only one \verb|datm[ ]| element. 
+The function parameters: \\ \\
+\verb|iret = model(mc, idat, ipt, idatm, ipass);| \\
+
+\verb|CCalcModel *mc|: pointer to the \verb|mc| object whose data structure contains all the working data for all the blocks and all the threads. All the mentioned arrays and variables other than the immediate \verb|model()| parameters are the \verb|mc| members and are accessed using the ``\verb|->|" operator, for example \verb|mc->dat|. We will omit ``\verb|->|" before the arrays assuming it will be used in the real code. 
+
+\verb|int id|: index into \verb|dat[ ]|.
+
+\verb|int ipt|: index of the first parameter in a set in \verb|pcur[nbeta,nseq,:]| for the specific temperature \verb|ibeta == threadIdx.x| and specific sequence \verb|iseq == blockIdx.x|. The first model parameter is \verb|pcur[ipt]|, and \verb|pcur[ipt+mc->nptot-1]| is the last parameter. If \verb|i| is a parameter index, from 0 to \verb|mc->nptot-1|, then \verb|pcur[ipt+i]| is the \verb|i|-th parameter, or \verb|pcur[ibeta,iseq,i]| in the Python code.
+
+\verb|imd|: a ``through index" that points at the location in \verb|datm[ ]| that corresponds to the location in \verb|dat[id]|, i.e. \verb|datm[ibeta,isec,id]|. However, \verb|imd| treats it as a one-dimensional array and must be used as \verb|datm[imd]|. This array contains the calculated model data that will be compared with the user-provided data in \verb|dat[ ]|. The \verb|imd| index is only used to save the result at \verb|datm[imd]| before the return.
+
+\verb|ipass|: pass number, starting from 0. The function can be called multiple times, 
+or in many passes. For example, at pass 0 the visibility amplitudes and phases are calculated. 
+At pass 1 the closure phases from already available phases are calculated. 
+
+The result should be stored at the \verb|datm[imd]| location.
+
+Also, \verb|iret = model()| returns are treated as follows. \\
+\verb|iret == 0|: no results. \\
+\verb|iret == 1|: success. \\
+\verb|iret == 2|: the computed \verb|datm[imd]| is an angle in radians. \\
+
+The two arrays are of special importance: \verb|dat[ ]| and \verb|datm[ ]|. They are immediate mappings of the data described in Sections~\ref{intro} and \ref{bayesian}: \verb|dat[i]| is $x_i^{\rm obs}$ and 
+\verb|datm[nbeta,nseq,i]| is $x_i^{\rm mod}$ (or $f_i$ in another context). These arrays are used beyond \verb|model()| to compute $\chi^2$ values in \verb|chi2c[nbeta,nseq]| according to  Eq.~\eqref{chi2_soft}.
+
+
+
+Below is an example of \verb|model()| written for solving a quite elementary (but hard for the gradient methods) optimization problem: finding the minimum of the ``Rosenbrock's valley" or Rosenbrock's banana function 
+
+$z = (1 - x)^2 + 100(y - x^2)^2$. \\
+
+This is the code: \\ \\
+\verb|#define X (mc->pcur[ipt])| \\
+\verb|#define Y (mc->pcur[ipt+1])| \\
+\verb|#define Z (mc->datm[imd])| \\\\
+\verb|_device__ int| \\
+\verb|model(CCalcModel *mc, int id, int ipt, | \\
+\verb|                  int imd, int ipass) {| \\
+\verb|  if (id == 0)| \\
+\verb|    Z = pow(1.f - X, 2)| \\
+\verb|      + 100.f*pow(Y - pow(X, 2), 2);| \\
+\verb|  return 1;|\\
+\verb|}|
+
+In this specific problem we have only two parameters and only one data element, set to zero. The $z$ value is calculated in many sequences and many temperatures, but it is always compared with zero. The $\chi^2$ here is actually $z^2$, but it is what we need: minimize $z$ varying $x$ and $y$. 
+
+\subsection{Writing Python Script: Class Mcgpu}\label{mcgpu}
+
+As the CUDA MCMC-RE software has a multi-layer architecture shown in Fig.~\ref{mcmc_soft_hierarchy}, 
+the functions provided by each of the layers can be used to run the optimization code linked with the 
+custom \verb|model()|function. 
+
+\begin{enumerate}
+  \item The high-level Python class \verb|Mcgpu| and its methods, module \verb|imgpu|.
+  \item Python API functions, module \verb|mcmc_interf|.
+  \item C++ classes CCalcModel, CMcmcFit and their methods, files \verb|mcmcjob.cuh|, \verb|mcmcjob.cu|.
+  \item CUDA C/C++ kernels (see Subsection~\ref{kernels})
+\end{enumerate}
+
+We do not consider using the last two layers. The Python API requires preliminary 
+initialization of a significant number of arrays and parameters 
+(see Subsection~\ref{algparams} ``Parameters of the MCMC-RE Algorithm") and is
+not recommended. The scripts using API are provided in the directories
+\verb"example/search_Rosenbrock/" and \\
+\verb"example/solvsys/". Both have the ``\verb|_api.py|" endings.
+
+The high-level class \verb|Mcgpu| from the module \verb|imgpu|,
+on the contrary, is easy to use. When instantiated, its constructor creates all
+the arrays and completes the necessary initializations ``under the hood". To
+start the MCMC-RE optimization, the user simply calls the class method
+\verb|burnin_and_search()| without parameters. Here we show the steps coded in
+\verb|template/template.py|: \\\\
+\verb|import imgpu| \\\\
+\verb|# Create the 'solver' object of| \\
+\verb|# the 'Mcgpu' class:| \\\\
+\verb|solver = imgpu.Mcgpu(pdescr=pdescr1, \| \\
+\verb|         pmint=pmint1, pmaxt=pmaxt1)| \\\\
+\verb|# Start parallel MCMC-RE on the GPU:| \\\\
+\verb|solver.burnin_and_search()| \\\\
+The results are among the \verb|solver| object attributes. For example, the
+optimal parameters found by the algorithm are in the array \verb|solver.pout|
+at the location(s) determined by the minimum values in another array, 
+\verb|solver.chi2|.  
+
+All the instantiation parameters as well as the class attributes (or 
+``class members" in C++ terminology) have \emph{exactly} the same names 
+and meanings as those of the MCMC-RE parameters described in Subsection~\ref{algparams}. 
+The only two exceptions are \verb|Mcgpu.pout_4d| and \verb|Mcgpu.chi2_2d|:
+they correspond to \verb|pout| and \verb|chi2| of the algorithm. This is
+because the method \\
+\verb|Mcgpu.burnin_and_search()| transfers their contents
+into more convenient 2-dimensional \\
+\verb|Mcgpu.pout[nprm,nseq*niter]|
+and 1-dimensional \verb|Mcgpu.chi2[nseq*niter]|. 
+
+The class \verb|Mcgpu| instantiation only requires three mandatory parameters:
+
+\verb|pdescr[nptot]|: The array of parameter descriptors. Its size, \verb|nptot|,
+determines the model dimensionality inside of \verb|Mcgpu|. The possible values 
+are 2 - angular parameter (radians), 1 - nonangular parameter,
+0 - this value excludes the corresponding parameter in \verb|ptotal| from optimization.
+
+\verb|pmint[nptot]| and \verb|pmaxt[nptot]|: for any i-th of the \verb|nptot| dimensions
+\verb|pmint[i]| and \verb|pmaxt[i]| determine the lower and upper limits between 
+which the i-th parameter will be searched. 
+
+Here is the full list of other parameters that can be used at \verb|Mcgpu| instantiation.
+
+\verb|ptotal[nptot]|: The array of model parameters. The \verb|ptotal[ ]| values at
+               the locations where \verb|pdescr[ ]| is nonzero are ignored.
+               The values where \verb|pdescr[ ]| is zero are used in the model as 
+               constants and not optimized.
+
+\verb|dat[ndat]|: The array of \verb|np.float32| data to compare with the model
+output to \verb|datm[ ]| via computing $\chi^2$. In case of a 
+function minimum search \verb|dat[ ]| can have any single value. If not specified,
+1-element array with zero value is created by default.
+
+\verb|coor|: Array of arbitrary size of the \verb|np.float32| data the user 
+wants \verb|model()| to have access to. If not specified, 1-element array with 
+zero value is created by default.
+
+\verb|idat|: Array of arbitrary size of the \verb|np.int32| data the user 
+wants \verb|model()| to have access to. If not specified, 1-element array with 
+zero value is created by default.
+
+\verb|icoor|: Array of arbitrary size of the \verb|np.int32| data the user 
+wants \verb|model()| to have access to. If not specified, 1-element array with 
+zero value is created by default.
+
+\verb|std2r[ndat]|: the reciprocals of the data variances, $1/\sigma^2_i$.
+					If not specified, filled in with ones by default.
+
+\verb|beta[nbeta]|: the array of temperatures. If not specified, by default is filled in 
+			  with a falling off geometric progression with common ratio 
+			  \verb|(betan/beta1)|$^\frac{1}{\mathrm{nbeta-1}}$.
+			  
+\verb|beta1|, \verb|betan|: First and last values in \\
+			\verb|beta[nbeta]|. If not specified,
+			the defaults are \verb|beta1 = 1.| and \verb|betan = 0.0001|. 
+			The temperature corresponds to $\beta = 1/{kT}$.
+	        The lowest temperature, \verb|beta[0]|, is usually set to \verb|beta1 = 1.|, 
+	        the highest, \verb|beta[nbeta-1]|, can be set to several orders of 
+	        magnitude less, something like \verb|betan = 0.0001|.
+
+\verb|seed|: The \verb|np.uint64| seed for the CUDA random number generator. If
+			 not specified, it is internally picked dependent on the PC time.
+			 If the user wants the random number sequence to be reproducible,
+			 seed must be specified as a constant at the \verb|Mcgpu| 
+			 instantiation.
+
+\verb|imodel=0|: If there are several alternative models programmed in \verb|model()|,
+ 				  this parameter tells which one should be computed.
+ 				  
+\verb|npass=1|: If \verb|model()| requires several sequential calls to compute,
+				this parameter tells how many times it should be called. For
+				example, in \verb|examples/sgra_model_fit| at the first pass
+				the amplitudes and phases model are calculated, and the closure
+				phases are calculated at the second pass from the phases saved
+				from the first pass.
+
+\verb|nadj|: number of sets for calculating acceptance rates. Default is 100.
+
+\verb|nbeta|: Number of temperatures (and number of threads per block). 
+			  Default is 32.
+
+\verb|nseq|: Number of ``sequences" or the 32-temperature processes (and the 
+			 number of CUDA blocks). Default is 14.
+
+\verb|nburn|: Number of iterations in the burn-in phase. Default is 300.
+
+\verb|niter|: Number of iterations in the main phase. Default is 500.
+
+
+
+\subsection{Examples of Optimization and Solving Nonlinear Equation Systems}
+
+Three examples of using the MCMC-SE CUDA software are given in the directory 
+\verb|examples/|. Two of them are very simple ``toys": \verb|search_Rosenbrock|
+and \verb|solvsys|. A third one, \verb|sgra_model_fit|, is quite comprehensive.
+
+
+\subsubsection{Solving a Nonlinear System of Equations}
+
+\begin{equation}
+  \begin{cases}
+    \qquad x^2 + y^2 &= 1 \\
+    -0.25x + y &= 0.5.
+  \end{cases}
+\end{equation}
+
+Its exact roots are $x_1,y_1 = (-0.966, 0.2585)$ and $x_2,y_2 = (0.7307, 0.6827)$.
+The solutions are found in \verb|pout| at several locations where \verb|chi2| values 
+are the smallest. See the printout. \\\\
+\verb|$ cd $CUDA_MCMC/examples/solvsys/| \\
+\verb|$ make| \\
+\verb|$ python2 solvsys.py| \\
+or \\
+\verb|$ python2 solvsys_api.py| \\
+or \\
+\verb|$ ipython2 --pylab| \\
+\verb|[ ]: %run solvsys.py| \\
+
+
+\subsubsection{Finding the Rosenbrock Function Minimum}
+
+\begin{equation}
+  z = (1 - x)^2 + 100(y - x^2)^2
+\end{equation}
+The minimum is inside a long, narrow, parabolic shaped flat valley at $x,y = (1,1)$.
+
+The best solution is in \verb|pout| at the location where \verb|chi2| is minimum. See the printout. \\\\
+\verb|$ cd $CUDA_MCMC/examples/search_Rosenbrock/| \\
+\verb|$ make| \\
+\verb|$ python2 search_Rosenbrock.py| \\
+or \\
+\verb|$ python2 search_Rosenbrock_api.py| \\
+or \\
+\verb|$ ipython2 --pylab| \\
+\verb|[ ]: %run search_Rosenbrock.py| \\
+
+
+\subsubsection{Fitting Model to SgrA* Black Hole Image}
+
+This example uses the Python class \verb|Mcgpu_Sgra| derived from the class \verb|Mcgpu| described above in Subsection~\ref{mcgpu}. Both classes are defined in the module \verb|imgpu|.
+
+There are two models defined in \verb|model()|, 9-parameter and 13-parameter. Of them, 
+the first one is useful, although both can be tested. 
+
+The directory \verb|examples/sgra_model_fit/| has several fits files with the SgrA* images
+and \verb|*_uvdata.txt| files with the results of their simulated observations with the use 
+of MAPS system. The script \verb|model_obsfit.py| runs MCMC-RE to fit the SgrA* image model
+to the observation data. The \verb|model_obsfit.py| script has minimum two parameters: the 
+model identifier, 9 or 13, and the name of observation data file ending with \verb|_uvdata.txt|.
+In order to compare the model images with the original fits image in the same color map, use \verb|plot_fits.py|.
+Below are shown a couple of examples.\\\\
+\verb|$ cd $CUDA_MCMC/examples/sgra_model_fit/| \\
+\verb|$ make| \\
+\verb|$ ipython2 --pylab| \\
+\verb|[ ]: %run model_obsfit.py 9 \| \\
+\verb|[ ]:     000008_1_1_000snd_uvdata.txt| \\
+\verb|[ ]: %run plot_fits.py 000008_1_1_000.fits| \\\\
+\verb|[ ]: %run model_obsfit.py 9 \| \\
+\verb|[ ]:     000508_1_1_000snd_uvdata.txt| \\
+\verb|[ ]: %run plot_fits.py 000508_1_1_000.fits| \\\\
+One can try the same with the 13-parameter model: \\
+\verb|[ ]: %run model_obsfit.py 13 \| \\
+\verb|[ ]:     000508_1_1_000snd_uvdata.txt| \\
+
+
+
+\clearpage
+
+\bibliographystyle{apalike}
+
+\bibliography{blackhole_static_image_geom_reconstr}
+
+\end{document}
+
+

@@ -1,0 +1,33 @@
+\begin{thebibliography}{}
+
+\bibitem[{Benkevitch} et~al., 2016]{BenkevBHM}
+{Benkevitch}, L., {Akiyama}, K., {Lu}, R., {Doeleman}, S., and {Fish}, V.
+  (2016).
+\newblock {Reconstruction of Static Black Hole Images Using Simple Geometric
+  Forms}.
+\newblock {\em arXiv}, 1609:00055.
+
+\bibitem[{Benneke} and {Seager}, 2012]{Benneke_Seager2012}
+{Benneke}, B. and {Seager}, S. (2012).
+\newblock {Atmospheric Retrieval for Super-Earths: Uniquely Constraining the
+  Atmospheric Composition with Transmission Spectroscopy}.
+\newblock {\em \apj}, 753:100.
+
+\bibitem[{Gregory}, 2005]{Gregory2005}
+{Gregory}, P.~C. (2005).
+\newblock {A Bayesian Analysis of Extrasolar Planet Data for HD 73526}.
+\newblock {\em \apj}, 631:1198--1214.
+
+\bibitem[{Metropolis} et~al., 1953]{Metropolis_etal_1953}
+{Metropolis}, N., {Rosenbluth}, A.~W., {Rosenbluth}, M.~N., {Teller}, A.~H.,
+  and {Teller}, E. (1953).
+\newblock {Equation of State Calculations by Fast Computing Machines}.
+\newblock {\em \jcp}, 21:1087--1092.
+
+\bibitem[{Varghese} et~al., 2011]{Varghese_etal2011}
+{Varghese}, A., {Ibata}, R., and {Lewis}, G.~F. (2011).
+\newblock {Stellar streams as probes of dark halo mass and morphology: a
+  Bayesian reconstruction}.
+\newblock {\em \mnras}, 417:198--215.
+
+\end{thebibliography}
