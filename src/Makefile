@@ -17,7 +17,7 @@
 #
 # To build the extension module mcmc_interf.so use the command(s):
 #
-# make purge; python2 setup_mcmc.py build_ext --inplace; make clean
+# make purge; python setup_mcmc.py build_ext --inplace; make clean
 #
 # To find your GPU architecture and set -arch correctly, run
 # $ list_gpus

@@ -46,8 +46,8 @@ chi2 = solver.chi2
 im = chi2.argmin()   # Indices of the chi^2 minimums 
 pout = solver.pout
 
-print 'The minimum chi^2 at chi2[%d] = %f' % (im, chi2[im])
-print 'pout[:,%d] = ' % (im), pout[:,im]
+print('The minimum chi^2 at chi2[%d] = %f' % (im, chi2[im]))
+print('pout[:,%d] = ' % (im), pout[:,im])
 
 
 #

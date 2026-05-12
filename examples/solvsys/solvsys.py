@@ -47,8 +47,8 @@ chi2 = solver.chi2
 im = chi2.argmin()   # Indices of the chi^2 minimums 
 pout = solver.pout
 
-print 'The minimum chi^2 at chi2[%d] = %f' % (im, chi2[im])
-print 'pout[:,%d] = ' % (im), pout[:,im]
+print('The minimum chi^2 at chi2[%d] = %f' % (im, chi2[im]))
+print('pout[:,%d] = ' % (im), pout[:,im])
 
 
 #
@@ -119,14 +119,14 @@ chi2_min = chi2_min[imsrt]
 pout_best = pout_best[:,imsrt]
 n_best = len(chi2_min)
 
-print
-print 'Exact root pairs:'
-print '(x1,y1) = (%10f,%10f) and (x2,y2) = (%10f,%10f)' % (rx1, ry1, rx2, ry2)
-print
-print 'Best root pairs found:'
-print '     x           y       chi^2'
-for im in xrange(n_best):
-	print '%10f %10f %10f' % (pout_best[0,im], pout_best[1,im], chi2_min[im])
+print()
+print('Exact root pairs:')
+print('(x1,y1) = (%10f,%10f) and (x2,y2) = (%10f,%10f)' % (rx1, ry1, rx2, ry2))
+print()
+print('Best root pairs found:')
+print('     x           y       chi^2')
+for im in range(n_best):
+	print('%10f %10f %10f' % (pout_best[0,im], pout_best[1,im], chi2_min[im]))
 
 
 show()

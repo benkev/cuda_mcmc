@@ -4,9 +4,9 @@ Build:
 $ make 
 
 Usage:
-$ ipython2 --pylab
+$ ipython --pylab
   %run solvsys.py 
 
 or
 
-$ python2 solvsys.py
+$ python solvsys.py

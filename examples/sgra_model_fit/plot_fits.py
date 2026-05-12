@@ -23,7 +23,7 @@ cvmax = ''
 
 argc = len(sys.argv)
 if argc > 2:
-    for i in xrange(2,argc):
+    for i in range(2,argc):
         op = sys.argv[i]
         if op == '-noannot':
             annot = False
@@ -32,7 +32,7 @@ if argc > 2:
             vmax = float(op[5:])
             cvmax = '_vmax%s' % op[5:]
         else:
-            print "Unknown option '%s'", op
+            print("Unknown option '%s'", op)
             sys.exit(0)
         
 
@@ -53,12 +53,12 @@ else:
     delt_mas = 0.001                     # Milli-arcsecs per pixel
     delt = delt_mas*1e-3/3600.           # degrees per pixel
     
-    print 'WARNING: Neither CDELT nor SCALE keywords are not present.'
-    print 'WARNING: Pixel size is assumed 1 micro-arcsecond.'
+    print('WARNING: Neither CDELT nor SCALE keywords are not present.')
+    print('WARNING: Pixel size is assumed 1 micro-arcsecond.')
 
 hdulist.close()
 
-print 'N = %d, delt = %g (deg/pix) = %g (mas/pix)' % (N, delt, delt_mas)
+print('N = %d, delt = %g (deg/pix) = %g (mas/pix)' % (N, delt, delt_mas))
 
 #
 # If the image is Quasi-Kerr, parse its name to determine
@@ -76,7 +76,7 @@ if len(nums) == 4:
     Avery = True
 
 fbn = re.findall('00[0-9]_00[0-9]_0[0-9]{2}', fits_file)
-if fbn <> []:
+if fbn != []:
     fbn = fbn[0]
     iasp = int(fbn[0:3])
     iincl = int(fbn[4:7])
@@ -87,7 +87,7 @@ if fbn <> []:
     
 if Avery:
     #Zsp = sum(img)    #float(nums[1])
-    print 'iasp = %d, iincl = %d, ieps = %d' % (iasp, iincl, ieps)
+    print('iasp = %d, iincl = %d, ieps = %d' % (iasp, iincl, ieps))
     # Rulers for the epsilon, a (spin), and incl (inclination) axes
     nasp, ninc, neps = 10, 7, 19
     dela = 0.1
@@ -99,7 +99,7 @@ if Avery:
     asp = rula[iasp]
     incl = ruli[iincl]
     eps = rule[ieps]
-    print 'asp = %g, incl = %g (deg), eps = %g' % (asp, incl, eps)
+    print('asp = %g, incl = %g (deg), eps = %g' % (asp, incl, eps))
 
     
 
@@ -113,7 +113,7 @@ if N%2 == 0: # For EVEN N
 else:        # For ODD  N
     XYext = (xyext, -xyext, -xyext, xyext)
 
-print 'XYext = ', XYext
+print('XYext = ', XYext)
 
 #
 # A bug in matplotlib.pyplot? A strange dark feature appears at the

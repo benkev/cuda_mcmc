@@ -17,7 +17,8 @@ from pylab import *
 import pyfits as pf
 import scipy.ndimage as sn   # Multidimensional image processing library
 import obsdatafit
-reload(obsdatafit)
+import importlib
+importlib.reload(obsdatafit)
 from obsdatafit import rotzoom
 import os, sys, re
 
@@ -32,8 +33,8 @@ import os, sys, re
 #                                                           	1.  1.4  120.
 #
 
-print 'sys.argv = ', sys.argv
-print 'len(sys.argv) = ', len(sys.argv)
+print('sys.argv = ', sys.argv)
+print('len(sys.argv) = ', len(sys.argv))
 
 # Rulers for spin, inclination, and epsilon
 nasp, ninc, neps = 10, 7, 19
@@ -47,7 +48,7 @@ rule = -0.8 + dele*arange(neps)
 Zsp, R, thd = 1., 1., 0.   # Default 
 th = radians(thd)
 
-print 
+print() 
 
 if len(sys.argv) == 6:
     qk_file =  sys.argv[1]
@@ -58,10 +59,10 @@ elif len(sys.argv) == 3:
     qk_file =  sys.argv[1]
     fits_file =  sys.argv[2]
 else:
-    print "\nInvalid command line. Usage:"
-    print "qk_rotzoom2fits.py   qk_file    fits_file    Zsp,    R,    th"
-    print "or"
-    print "qk_rotzoom2fits.py    qk_file    fits_file"
+    print("\nInvalid command line. Usage:")
+    print("qk_rotzoom2fits.py   qk_file    fits_file    Zsp,    R,    th")
+    print("or")
+    print("qk_rotzoom2fits.py    qk_file    fits_file")
     sys.exit(0);
 
 scale_flux = 2.5000;
@@ -84,7 +85,7 @@ M_in_arcsec = 9.87122944e-6;
 M_in_arcsec *= mass;
 M_in_arcsec /= distance;
 pixincr_deg = pixincr_in_M*M_in_arcsec/3600.0;
-print "pixel increment in degrees: %g\n" % pixincr_deg
+print("pixel increment in degrees: %g\n" % pixincr_deg)
 
 fh = open(qk_file)
 fh.readline(); fh.readline(); fh.readline() # Skip header
@@ -110,7 +111,7 @@ absZsp = sum(flx)   # Zsp*scale_flux  # Jansky
 absR = 32.*R             # microarcsrconds
 
 fnum = re.findall('00[0-9]_00[0-9]_0[0-9]{2}', qk_file)
-if fnum <> []:
+if fnum != []:
     fnum = fnum[0]
     iasp = int(fnum[0:3])
     iincl = int(fnum[4:7])
@@ -119,7 +120,7 @@ if fnum <> []:
     incl = ruli[iincl]
     eps = rule[ieps]
 else:
-    print "Wrong quasi Kerr file name!"
+    print("Wrong quasi Kerr file name!")
     sys.exit(0)
 
 Rshadow = (4.5 + 0.7*sqrt(1. - asp**2))*5.1  # shadow size (microarcseconds)

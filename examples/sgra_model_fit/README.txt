@@ -7,13 +7,13 @@ $ make
 
 
 Usage:
-$ ipython2 --pylab
+$ ipython --pylab
   %run model_obsfit.py [9|13] uvdata.txt ng=100 xy=170. \
                                         [nburn=400] [niter=1200]  \
                                         [nbeta=32] [nseq=8]
 or (This still needs some more work!)
 
-$ python2 model_obsfit.py [9|13] uvdata.txt ng=100 xy=170. \
+$ python model_obsfit.py [9|13] uvdata.txt ng=100 xy=170. \
                                         [nburn=400] [niter=1200]  \
                                         [nbeta=32] [nseq=8]
 

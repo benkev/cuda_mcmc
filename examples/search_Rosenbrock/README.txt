@@ -4,9 +4,9 @@ Build:
 $ make 
 
 Usage:
-$ ipython2 --pylab
+$ ipython --pylab
   %run search_Rosenbrock.py 
 
 or
 
-$ python2 search_Rosenbrock.py
+$ python search_Rosenbrock.py

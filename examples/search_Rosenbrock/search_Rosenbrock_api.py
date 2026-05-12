@@ -53,7 +53,7 @@ pmax = pmaxt[ivar]
 # invar[nptot] maps ptotal[0:nptot] on prm[0:nprm] (not needed here )
 invar = zeros(nptot, dtype=int32)
 ip = 0
-for i in xrange(nptot):
+for i in range(nptot):
     if pdescr[i] != 0: 
         invar[i] = ip
         ip = ip + 1
@@ -95,22 +95,22 @@ ptent =  zeros((nbeta,nseq), dtype=float32) # Tentative parameters
 pcur = zeros((nbeta,nseq,nptot), dtype=float32) # Accepted param. set
 
 # Fill in the working storage for threads calculating model visibilities
-for i in xrange(nbeta):
-    for j in xrange(nseq):
+for i in range(nbeta):
+    for j in range(nseq):
         pcur[i,j,:] = ptotal
-        for k in xrange(nprm):
+        for k in range(nprm):
             pcur[i,j,ivar[k]] = pmin[k] + (pmax[k] - pmin[k])/2.
 
 # Initialize parameter steps
 pmid = (pmax - pmin)/50.
-for i in xrange(nprm):
+for i in range(nprm):
     pstp[i,:,:] = pmid[i]
 
-print 'pstp[:,0,0] = ', pstp[:,0,0] 
+print('pstp[:,0,0] = ', pstp[:,0,0]) 
 
 # Initialize tcur
 n0_nbeta = arange(nbeta) # 0..nbeta-1
-for iseq in xrange(nseq):
+for iseq in range(nseq):
     tcur[:,iseq] = n0_nbeta
 
 # Initialize temperatures
@@ -118,13 +118,13 @@ if nbeta == 1:
     bstp = 1.0  # For debugging only
 else:
     bstp = (betan/beta1)**(1.0/float(nbeta-1))
-for i in xrange(nbeta):
+for i in range(nbeta):
     beta[i] = beta1*bstp**i
 
 # Initialize counter
 n_cnt[:] = float32(1.)
 
-print 'std2r = ', std2r, ', idat = ', idat, ', nidat = ', nidat
+print('std2r = ', std2r, ', idat = ', idat, ', nidat = ', nidat)
 #sys.exit(0)
 
 mi.mcmcuda(coor, dat, std2r, icoor, idat, datm, chi2m, \
@@ -145,8 +145,8 @@ c2 = chi2.flatten()
 po = pout[:,0,:,:].reshape((nprm,nseq*niter))
 im = c2.argmin()   # Indices of the chi^2 minimums 
 
-print 'The minimum chi^2 at chi2[%d] = %f' % (im, c2[im])
-print 'pout[%d] = ' % (im), po[:,im]
+print('The minimum chi^2 at chi2[%d] = %f' % (im, c2[im]))
+print('pout[%d] = ' % (im), po[:,im])
 
 #
 # Print the best root pairs found
@@ -159,13 +159,13 @@ chi2_min = chi2_min[imsrt]
 pout_best = pout_best[:,imsrt]
 n_best = len(chi2_min)
 
-print
-print 'Exact solution: (x,y) = (%10f,%10f)' % (1, 1)
-print
-print 'Best minimum found:'
-print '     x           y       chi^2'
-for im in xrange(n_best):
-	print '%10f %10f %10f' % (pout_best[0,im], pout_best[1,im], chi2_min[im])
+print()
+print('Exact solution: (x,y) = (%10f,%10f)' % (1, 1))
+print()
+print('Best minimum found:')
+print('     x           y       chi^2')
+for im in range(n_best):
+	print('%10f %10f %10f' % (pout_best[0,im], pout_best[1,im], chi2_min[im]))
 
 	
 figure(figsize=(12,6))

@@ -68,10 +68,10 @@ def cbinom(n, m):
     num = n
     den = m
     if m > 2:
-        for i in xrange(m-1,1,-1):
+        for i in range(m-1,1,-1):
             den = den*i
     if n > 2:
-        for i in xrange(n-1,n-m,-1):
+        for i in range(n-1,n-m,-1):
              num = num*i
     return num/den
 
@@ -112,11 +112,11 @@ def combgen(n, m):
     ## """
         if p < m:
             if p == 0:
-                for i in xrange(n):
+                for i in range(n):
                     S[0] = i
                     ic = cgenrecurs(S, n, m, 1, C, ic)
             else: # Here p > 0:
-                for i in xrange(S[p-1]+1,n):
+                for i in range(S[p-1]+1,n):
                     S[p] = i
                     ic = cgenrecurs(S, n, m, p+1, C, ic)
         else: # Here p == m
@@ -147,7 +147,7 @@ def find_triangles(antennas):
     ntri = size(itri,0)             # Number of triangles
     tri = empty(itri.shape, int)    # Array of triangles
     trid = empty(ntri, int)         # Array of unique IDs for the triangles 
-    for i in xrange(ntri): 
+    for i in range(ntri): 
         tri[i,:] = antarr[itri[i,:]]  # Triangle of antennae
         # A triangle ID is made as a radix maxantnum number whose
         # "digits" are the antenna numbers in the triangle.
@@ -252,7 +252,7 @@ def calc_closures(phase, tsec, blid):
     tcphsec = zeros((maxcps), float) # Closure phase times in seconds
 
     iclp = 0
-    for itim in xrange(ntimes):   # Consider ith equal-time span
+    for itim in range(ntimes):   # Consider ith equal-time span
         i0 = ibeg[itim]           # Span start in data[]
         i1 = iend[itim]           # Span end   in data[]
         nbl = i1 - i0             # Number of data rows in the span
@@ -263,7 +263,7 @@ def calc_closures(phase, tsec, blid):
         itri = combgen(nant, 3)   # Indices into ant to get triangles
         ntri = size(itri,0)       # Number of triangles in this span
                 
-        for j in xrange(ntri): # Over all triangles in this span
+        for j in range(ntri): # Over all triangles in this span
             a1, a2, a3 = ant[itri[j,:]] # Triangle of antennae
             # Find indices of the three baselines made of the antennae
             ib1 = i0 + where((bl[:,0] == a1) & (bl[:,1] == a2))[0][0]
@@ -348,7 +348,7 @@ def calc_closures1(phase, tsec, blid):
     tcphsec = np.zeros((maxcps), float) # Closure phase times in seconds
 
     iclp = 0
-    for itim in xrange(ntimes):   # Consider ith equal-time span
+    for itim in range(ntimes):   # Consider ith equal-time span
         i0 = ibeg[itim]           # Span start in data[]
         i1 = iend[itim]           # Span end   in data[]
         nbl = i1 - i0             # Number of data rows in the span
@@ -359,7 +359,7 @@ def calc_closures1(phase, tsec, blid):
         itri = combgen(nant, 3)   # Indices into ant to get triangles
         ntri = np.size(itri,0)       # Number of triangles in this span
                 
-        for j in xrange(ntri): # Over all triangles in this span
+        for j in range(ntri): # Over all triangles in this span
             a1, a2, a3 = ant[itri[j,:]] # Triangle of antennae
             # Find indices of the three baselines made of the antennae
             ib1 = i0 + np.where((bl[:,0] == a1) & (bl[:,1] == a2))[0][0]
@@ -454,7 +454,7 @@ def calc_closuvap(phase, tsec, blid, ulam, vlam, amp):
     ac = zeros((maxcps,3), float)
     pc = zeros((maxcps,3), float)
     iclp = 0                      # Closure phase index
-    for itim in xrange(ntimes):   # Consider ith equal-time span
+    for itim in range(ntimes):   # Consider ith equal-time span
         i0 = ibeg[itim]           # Span start in data[]
         i1 = iend[itim]           # Span end   in data[]
         nbl = i1 - i0             # Number of data rows in the span
@@ -465,7 +465,7 @@ def calc_closuvap(phase, tsec, blid, ulam, vlam, amp):
         itri = combgen(nant, 3)   # Indices into ant to get triangles
         ntri = size(itri,0)       # Number of triangles in this span
                 
-        for j in xrange(ntri): # Over all triangles in this span
+        for j in range(ntri): # Over all triangles in this span
             a1, a2, a3 = ant[itri[j,:]] # Triangle of antennae
             # Find indices of the three baselines made of the antennae
             ib1 = i0 + where((bl[:,0] == a1) & (bl[:,1] == a2))[0][0]
@@ -533,7 +533,7 @@ def calc_closures_cuv(ul, vl, amp, phase, tsec, blid):
     tcphsec = zeros((maxcps), float) # Closure phase times in seconds
 
     iclp = 0
-    for itim in xrange(ntimes):   # Consider ith equal-time span
+    for itim in range(ntimes):   # Consider ith equal-time span
         i0 = itimes[itim]         # Span start in data[]
         i1 = itimes[itim+1]       # Span end   in data[]
         if i1 in ibad: continue   #==========>>> Ignore bad bls[i0:i1]
@@ -545,7 +545,7 @@ def calc_closures_cuv(ul, vl, amp, phase, tsec, blid):
         itri = combgen(nant, 3)   # Indices into ant to get triangles
         ntri = size(itri,0)       # Number of triangles in this span
 
-        for j in xrange(ntri): # Over all triangles in this span
+        for j in range(ntri): # Over all triangles in this span
             a1, a2, a3 = ant[itri[j,:]] # Triangle of antennae
             # Find indices of the three baselines made of the antennae
             ib1 = i0 + where((bl[:,0] == a1) & (bl[:,1] == a2))[0]
@@ -917,7 +917,7 @@ def readamp1(amp_data_file):
     fp.close()
     
     if i == 0:
-        print "\namp_data_file has no 15-number lines; wrong file"
+        print("\namp_data_file has no 15-number lines; wrong file")
         sys.exit(1);
       
     ulam.resize(i)
@@ -1003,7 +1003,7 @@ def readamp2(amp_data_file):
     fp.close()
     
     if i == 0:
-        print "\namp_data_file has no 15-number lines; wrong file"
+        print("\namp_data_file has no 15-number lines; wrong file")
         sys.exit(1);
       
     ulam.resize(i)
@@ -1095,7 +1095,7 @@ def readamp3(amp_data_file):
     fp.close()
     
     if i == 0:
-        print "\namp_data_file has no 15-number lines; wrong file"
+        print("\namp_data_file has no 15-number lines; wrong file")
         sys.exit(1);
       
     ulam.resize(i)
@@ -1267,7 +1267,7 @@ def readcphs(tcode, cphs, gha, cuv, cphs_data_file, nlines):
         nums = array(nums)     # Array of strings; just to ease indexing
         amp1, amp2, amp3 = float_(nums[[11, 15, 18]])
         if ((amp1 == 0.0) and (amp2 == 0.0) and (amp3 == 0.0)):
-            print 'nums = ', nums 
+            print('nums = ', nums) 
             continue
         year, doy, hr, mn = int_(nums[:4])
         sec = float(nums[4])
@@ -1345,7 +1345,7 @@ def readcphs1(cphs_data_file):
         nums = array(nums)     # Array of strings; just to ease indexing
         amp1, amp2, amp3 = float_(nums[[11, 15, 18]])
         if ((amp1 == 0.0) and (amp2 == 0.0) and (amp3 == 0.0)):
-            print 'nums = ', nums 
+            print('nums = ', nums) 
             continue
         year, doy, hr, mn = int_(nums[:4])
         sec = float(nums[4])
@@ -1368,7 +1368,7 @@ def readcphs1(cphs_data_file):
     fp.close()
 
     if m == 0:
-        print "\ncphase_data_file has no 21-number lines; wrong file"
+        print("\ncphase_data_file has no 21-number lines; wrong file")
         sys.exit(1);
 
     cphs.resize(i)
@@ -1436,7 +1436,7 @@ def readcphs2(cphs_data_file):
         nums = array(nums)     # Array of strings; just to ease indexing
         amp1, amp2, amp3 = float_(nums[[11, 15, 18]])
         if ((amp1 == 0.0) and (amp2 == 0.0) and (amp3 == 0.0)):
-            print 'nums = ', nums 
+            print('nums = ', nums) 
             continue
         year, doy, hr, mn = int_(nums[:4])
         sec = float(nums[4])
@@ -1461,7 +1461,7 @@ def readcphs2(cphs_data_file):
     fp.close()
 
     if m == 0:
-        print "\ncphase_data_file has no 21-number lines; wrong file"
+        print("\ncphase_data_file has no 21-number lines; wrong file")
         sys.exit(1);
 
     cphs.resize(i)
@@ -1560,7 +1560,7 @@ def xringaus(ulam, vlam, vparam):
     ree = .5*(h+h0)*Re*j1(arg*Re)/rho
     ime = (h-h0)/pi4*(pi*Re*(j0(arg*Re) - jn(2,arg*Re))/rho**2 - \
                                j1(arg*Re)/(rho**3))*U
-    if Ri <> 0:
+    if Ri != 0:
         rei = .5*(h+h0 - d*(h-h0)/Re)*Ri*j1(arg*Ri)/rho
         imi = (h-h0)/pi4*(Ri/Re)*(pi*Ri*(j0(arg*Ri) - jn(2,arg*Ri))/rho**2 - \
                                j1(arg*Ri)/(rho**3))*U
@@ -1573,12 +1573,12 @@ def xringaus(ulam, vlam, vparam):
     #
     ree[iz] = .5*(h+h0)*pi*Re**2
     ime[iz] = -.25*pi**2*(h-h0)*Re**3*U[iz]
-    if Ri <> 0:
+    if Ri != 0:
         rei[iz] = .5*(h+h0 - d*(h-h0)/Re)*pi*Ri**2
         imi[iz] = -.25*pi**2*(h-h0)*(Ri**4/Re)*U[iz]
     
     Fex = ree + 1j*ime  # External slanted pillbox 
-    if Ri <> 0:
+    if Ri != 0:
         Dis = exp(1j*2.*pi*d*U)    # Displacement factor for inner ring
         Fin = Dis*(rei + 1j*imi) # Inner slanted pillbox shifted by d
         Fr = Fex - Fin
@@ -1680,9 +1680,9 @@ def xringaus2(ulam, vlam, vparam):
         Gamp = exp(-fwhm2std*((U*gsx)**2 + (V*gsy)**2))
         Gph = -2.*pi*gshift
         Fg = Gamp*(cos(Gph) + 1j*sin(Gph)) # Fourier image of displaced Gaussian
-        print 'Fg = Gamp*(cos(Gph) + 1j*sin(Gph)) # displaced Gaussian'
-        print 'Zsp=%g, Re=%g, gax=%g, aq=%g, gq=%g, alpha=%g, beta=%g' % \
-              (Zsp, Re, gax, aq, gq, alpha, beta)
+        print('Fg = Gamp*(cos(Gph) + 1j*sin(Gph)) # displaced Gaussian')
+        print('Zsp=%g, Re=%g, gax=%g, aq=%g, gq=%g, alpha=%g, beta=%g' % \
+              (Zsp, Re, gax, aq, gq, alpha, beta))
     if gq == 1.:   # Gaussian only
         return Zsp*Fg               #  ================================== >>>
     
@@ -1727,7 +1727,7 @@ def xringaus2(ulam, vlam, vparam):
     ree = .5*(h+h0)*Re*j1(arg*Re)/rho
     ime = (h-h0)/pi4*(pi*Re*(j0(arg*Re) - jn(2,arg*Re))/rho**2 - \
                                j1(arg*Re)/(rho**3))*U
-    if Ri <> 0:
+    if Ri != 0:
         rei = .5*(h+h0 - d*(h-h0)/Re)*Ri*j1(arg*Ri)/rho
         imi = (h-h0)/pi4*(Ri/Re)*(pi*Ri*(j0(arg*Ri) - jn(2,arg*Ri))/rho**2 - \
                                j1(arg*Ri)/(rho**3))*U
@@ -1736,7 +1736,7 @@ def xringaus2(ulam, vlam, vparam):
     #
     ree[iz] = .5*(h+h0)*pi*Re**2
     ime[iz] = -.25*pi**2*(h-h0)*Re**3*U[iz]
-    if Ri <> 0:
+    if Ri != 0:
         rei[iz] = .5*(h+h0 - d*(h-h0)/Re)*pi*Ri**2
         imi[iz] = -.25*pi**2*(h-h0)*(Ri**4/Re)*U[iz]
 
@@ -1744,7 +1744,7 @@ def xringaus2(ulam, vlam, vparam):
     # Shift the inner ring
     #
     Fex =      ree + 1j*ime  # External slanted pillbox 
-    if Ri <> 0:
+    if Ri != 0:
         Dis = exp(1j*2.*pi*(d*U + d1*V))    # Displ. factor for inner ring
         Fin = Dis*(rei + 1j*imi) # Inner slanted pillbox shifted by d
         Fr = Fex - Fin
@@ -2259,7 +2259,7 @@ def compute_chi2_cph(visfun, ulam, vlam, cphs, cuv, \
     
     # We need to figure out visibility phase for each baseline
     cphs_comp = 0.0;
-    for i in xrange(3):
+    for i in range(3):
         u = cuv[:,2*i]    # Link to u column 
         v = cuv[:,2*i+1]  # Link to v column 
 
@@ -2310,7 +2310,7 @@ def plot_orig_vs_model(fits_file, visfun, zsp, gsize, radius, theta):
     UVspan_Glam = 1e-9*UVspan   # in Gigalambdas
     UVspan_Mlam = 1e-6*UVspan   # in Megalambdas
 
-    print 'XYspan_uas = ', XYspan_uas, ', UVspan_Glam = ', UVspan_Glam
+    print('XYspan_uas = ', XYspan_uas, ', UVspan_Glam = ', UVspan_Glam)
 
     #sys.exit(0)
 
@@ -2900,7 +2900,7 @@ def read_fits(fits_file, param=False, xlr=False):
     #
     if bool(param) == True:
         h = hdu.header
-        vl = h.values() # List of values, including COMMENT
+        vl = list(h.values()) # List of values, including COMMENT
         #print 'vl = ', vl
         sprm = ''
         parsep = False  # Not parsing the parameters
@@ -3009,7 +3009,7 @@ def wireframe(z_in):
     yrng = linspace(0., n, m)
     x, y = meshgrid(xrng, yrng)
 
-    print x.shape, y.shape, z.shape
+    print(x.shape, y.shape, z.shape)
 
     fig = figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -3033,7 +3033,7 @@ def wireframexy(x_in, y_in, z_in):
     rstr = 1
     cstr = 1
     
-    print x.shape, y.shape, z.shape
+    print(x.shape, y.shape, z.shape)
 
     fig = figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -3062,7 +3062,7 @@ def rotzoom(img, Zsp, kzoom, thd):
         kzoom = kz100/100.
     else:
         kzoom = (kz100 - 1.)/100.
-    print 'zoom = ', kzoom
+    print('zoom = ', kzoom)
     
     if kzoom > 1.:
         img1 = sn.rotate(img, thd, reshape=False)
@@ -3133,7 +3133,7 @@ def cpix2cpid(cpix):
     ncph = len(cpix[:,0])
     cpid = np.zeros(ncph, dtype=int)
 
-    for i in xrange(ncph):
+    for i in range(ncph):
         cpid[i] = cpix[i,0] + PK3I*(cpix[i,1] + PK3I*cpix[i,2])
 
     return cpid
@@ -3154,7 +3154,7 @@ def cpid2closures(cpid, phase):
     """
     ncph = len(cpid)
     cphs = zeros(ncph)
-    for i in xrange(ncph):
+    for i in range(ncph):
         i1 = cpid[i]%PK3I
         iw = cpid[i]//PK3I
         i2 = iw%PK3I
@@ -3263,14 +3263,14 @@ def read_vincent_cphs():
     nhdr = 25
     
     fin = open('vincent_sgra_cphases_2009_2013.txt', 'r')
-    for i in xrange(nhdr): print fin.readline(),   # Skip header
+    for i in range(nhdr): print(fin.readline(), end=' ')   # Skip header
 
     #
     # Count lines
     #
     nlines = 0
     s = fin.readline()
-    while s <> "":
+    while s != "":
         nlines = nlines + 1
         s = fin.readline()
     fin.close()
@@ -3290,12 +3290,12 @@ def read_vincent_cphs():
                    '[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
 
     fin = open('sgra_cphases_vincent.txt', 'r')
-    for i in xrange(nhdr): fin.readline(),   # Skip header
+    for i in range(nhdr): fin.readline(),   # Skip header
 
     #
     # Read lines into arrays
     #
-    for i in xrange(nlines):
+    for i in range(nlines):
         s = fin.readline()
         dat = p.findall(s)
         yd[i,0] = np.int32(dat[0])  # year
@@ -3319,7 +3319,7 @@ def read_vincent_cphs():
     #
     # Average the closures over equal time spans
     #
-    for i in xrange(ncph):
+    for i in range(ncph):
         j0 = ibeg[i]
         j1 = iend[i]
         if j1 > j0+1:
@@ -3400,8 +3400,8 @@ def read_vincent_cphs_coord():
     vfp = []
 
     s = f1.readline()
-    while s <> "":
-        if s[0] <> '#' and (s[0] <> '\n'):
+    while s != "":
+        if s[0] != '#' and (s[0] != '\n'):
             row = s.split()
             t_cp.append(row[2])
             cphs.append(row[6])
@@ -3409,8 +3409,8 @@ def read_vincent_cphs_coord():
         s = f1.readline()
 
     s = f3.readline()
-    while s <> "":
-        if (s[0] <> '#') and (s[0] <> '\n'):
+    while s != "":
+        if (s[0] != '#') and (s[0] != '\n'):
             row = s.split()
             #yr.append(row[0])
             #doy.append(row[1])

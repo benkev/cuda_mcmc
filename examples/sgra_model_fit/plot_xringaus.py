@@ -16,10 +16,11 @@ import os
 import sys
 
 import obsdatafit
-reload(obsdatafit)
+import importlib
+importlib.reload(obsdatafit)
 from obsdatafit import *
 import mcmcfit1
-reload(mcmcfit1)
+importlib.reload(mcmcfit1)
 import mcmcfit1 as mc
 
 #
@@ -38,8 +39,8 @@ Zsp, Re, rq, ecc, fade, gax, aq, gq, th = float_(sys.argv[1:])
 
 vfparam = array([Zsp, Re, rq, ecc, fade, gax, aq, gq, th])
 
-for i in xrange(nptotal): print '%g\t' % vfparam[i],
-print
+for i in range(nptotal): print('%g\t' % vfparam[i], end=' ')
+print()
 #print 'chi^2[0] = ', chi2[0]
 
 Vi, Br, Ugrid, Vgrid, Xgrid, Ygrid, UVext, XYext = \

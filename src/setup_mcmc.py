@@ -1,7 +1,7 @@
 # 
 # To build the extension file mcmc_interf.so use the commands:
 #
-# $ make purge; python2 setup_mcmc.py build_ext --inplace;  make clean
+# $ make purge; python setup_mcmc.py build_ext --inplace;  make clean
 #
 
 from distutils.core import setup

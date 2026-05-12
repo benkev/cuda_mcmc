@@ -331,7 +331,7 @@ class Mcgpu(object):   # The new-style class must inherit the 'object' class
 		#
 		self.invar = np.zeros(nptot, dtype=np.int32)
 		ip = 0
-		for i in xrange(self.nptot):
+		for i in range(self.nptot):
 			if self.pdescr[i] != 0: 
 				self.invar[i] = ip
 				ip = ip + 1
@@ -381,21 +381,21 @@ class Mcgpu(object):   # The new-style class must inherit the 'object' class
 
 
 		# Set initial parameter values to averages along the prior dimensions
-		for i in xrange(nbeta):
-			for j in xrange(nseq):
+		for i in range(nbeta):
+			for j in range(nseq):
 				self.pcur[i,j,:] = ptotal
-				for k in xrange(nprm):
+				for k in range(nprm):
 					self.pcur[i,j,ivar[k]] = self.pmin[k] + \
 							 (self.pmax[k] - self.pmin[k])/np.float32(2.)
 
 		# Initialize parameter steps
 		pmid = (pmax - pmin)/50.
-		for i in xrange(nprm):
+		for i in range(nprm):
 			self.pstp[i,:,:] = pmid[i]
 
 		# Initialize tcur, temoerature indicse
 		n0_nbeta = np.arange(nbeta, dtype=np.float32) # 0..nbeta-1
-		for iseq in xrange(nseq):
+		for iseq in range(nseq):
 			self.tcur[:,iseq] = n0_nbeta
 
 		# Initialize temperatures
@@ -414,7 +414,7 @@ class Mcgpu(object):   # The new-style class must inherit the 'object' class
 			beta1 = np.float32(1.)
 			betan = self.betan	 # ~exp(chi2/2)
 			bstp = (betan/beta1)**(1.0/np.float32(nbeta-1))
-			for i in xrange(nbeta):
+			for i in range(nbeta):
 				self.beta[i] = beta1*bstp**i
 		else:
 			self.beta = beta.astype(np.float32)
@@ -530,8 +530,8 @@ class Mcgpu(object):   # The new-style class must inherit the 'object' class
 		elif prm.ndim == 3:
 			nbeta = sh[0]; nseq = sh[1]; nptot = sh[2]			  
 		else:
-			print "calcmodchi2(): input parameter array has > 3 or < 1 " \
-				  "dimensions"
+			print("calcmodchi2(): input parameter array has > 3 or < 1 " \
+				  "dimensions")
 			return
 
 		ndat = self.ndat
@@ -638,7 +638,7 @@ class Mcgpu_Sgra(Mcgpu):
 			self.ulam = 1e-3*self.ulam
 			self.vlam = 1e-3*self.vlam
 		else:
-			print "Warning: uvfile with the UV coverage data not specified"
+			print("Warning: uvfile with the UV coverage data not specified")
 
 		#
 		# Make sure self.eamp[nvis] is filled with sensible 1-sigma
@@ -651,27 +651,27 @@ class Mcgpu_Sgra(Mcgpu):
 				self.eamp = np.copy(self.fsig)
 			else:
 				self.error = "Some sigmas in uv file are zeros."
-				print "Error: "+self.error
+				print("Error: "+self.error)
 				return
 		elif np.isscalar(eamp):
 			if eamp != 0:
 				self.eamp[:] = eamp
 			else:
 				self.error = "1-sigma visibility amplitude error eamp is zero."
-				print "Error: "+self.error
+				print("Error: "+self.error)
 				return
 		elif len(eamp) == len(self.amp):
 			if all(eamp) != 0: 
 				self.eamp = np.copy(eamp)
 			else:
 				self.error = "Some of eamp elements are zero."
-				print "Error: "+self.error
+				print("Error: "+self.error)
 				return
 		else:
 			self.error = "number of 1-sigma errors in parameter eamp (%d) " \
 				  "differs from number of visibility amplitudes " \
 				  "in self.amp (%d)." % (len(eamp), len(self.amp))
-			print "Error: "+self.error
+			print("Error: "+self.error)
 			return
 
 
@@ -721,27 +721,27 @@ class Mcgpu_Sgra(Mcgpu):
 			if ecph is None:
 				self.error = "Closure phase 1-sigma error(s) not provided " \
 					  "in parameter ecph."
-				print "Error: "+self.error
+				print("Error: "+self.error)
 				return
 			elif np.isscalar(ecph):
 				if ecph != 0:
 					self.ecph[:] = ecph
 				else:
 					self.error = "Closure phase 1-sigma error ecph is zero."
-					print "Error: "+self.error
+					print("Error: "+self.error)
 					return
 			elif len(ecph) == len(self.ecph):
 				if all(ecph) != 0: 
 					self.ecph = np.copy(ecph)
 				else:
 					self.error = "Some of ecph elements are zero."
-					print "Error: "+self.error
+					print("Error: "+self.error)
 					return
 			else:
 				self.error = "number of 1-sigma errors in parameter " \
 					  "ecph (%d) differs from number of closure phaese " \
 					  "in self.cphs (%d)." % (len(ecph), len(self.cphs))
-				print "Error: "+self.error
+				print("Error: "+self.error)
 				return
 		else:
 			self.ecph = None
@@ -818,7 +818,7 @@ class Mcgpu_Sgra(Mcgpu):
 		self.coor[:(2*nvis)] = np.vstack((self.ulam, self.vlam)).T.flatten()
 		
 		if self.use_cphs:  # Closure phases used
-			if cphs <> None: # Add closure phase coordinates [u1,v1,u2,v2]
+			if cphs != None: # Add closure phase coordinates [u1,v1,u2,v2]
 				self.coor[(2*nvis):] = self.uvcp.flatten()
 			if not self.cpExt: # Closures and uvcp are provided externally
 				self.icoor[:] = self.cpix.flatten() # Triplets (b1,b2,b3)
@@ -871,8 +871,8 @@ class Mcgpu_Sgra(Mcgpu):
 
 	def burnin_and_search(self):
 
-		if self.error <> "":
-			print "Cannot burnin and search: first fix the error: "+self.error
+		if self.error != "":
+			print("Cannot burnin and search: first fix the error: "+self.error)
 			return 1
 
 		mi.mcmcuda(self.coor, self.dat, self.std2r, \
@@ -922,8 +922,8 @@ class Mcgpu_Sgra(Mcgpu):
 			   the model and the observation data values
 		datm:  model data
 		"""
-		if self.error <> "":
-			print "First fix the error: "+self.error
+		if self.error != "":
+			print("First fix the error: "+self.error)
 			return 1
 		
 		if type(prm_in) != np.ndarray:				  # If prm is list or tuple
@@ -940,8 +940,8 @@ class Mcgpu_Sgra(Mcgpu):
 		elif len(sh) == 3:	 # 3D
 			nbeta = sh[0]; nseq = sh[1]; nptot = sh[2]			  
 		else:
-			print "calcmodchi2(): input parameter array has > 3 or < 1 " \
-				  "dimensions"
+			print("calcmodchi2(): input parameter array has > 3 or < 1 " \
+				  "dimensions")
 			return
 			#sys.exit(0)
 
@@ -968,7 +968,7 @@ class Mcgpu_Sgra(Mcgpu):
 		# Parts of datm used to calculate chi2m:
 		nchi2m = nbeta*nseq*ndat
 
-		print 'nbeta, nseq, ndat, nchi2m = ', nbeta, nseq, ndat, nchi2m
+		print('nbeta, nseq, ndat, nchi2m = ', nbeta, nseq, ndat, nchi2m)
 		
 		mvicp = datm[:nchi2m]. \
 					  reshape((nbeta,nseq,ndat)) # Head: model amps and closures
@@ -1028,8 +1028,8 @@ class Mcgpu_Sgra(Mcgpu):
 			nbeta = prm_sh[0]; nseq = prm_sh[1]; nptot = prm_sh[2]			  
 			mamp_sh = (nbeta,nseq,udim,vdim)
 		else:
-			print "calcmodel(): input parameter array has > 3 or < 1 " \
-				  "dimensions"
+			print("calcmodel(): input parameter array has > 3 or < 1 " \
+				  "dimensions")
 			return
 			#sys.exit(0)
 
@@ -1091,10 +1091,10 @@ def cbinom(n, m):
 	num = n
 	den = m
 	if m > 2:
-		for i in xrange(m-1,1,-1):
+		for i in range(m-1,1,-1):
 			den = den*i
 	if n > 2:
-		for i in xrange(n-1,n-m,-1):
+		for i in range(n-1,n-m,-1):
 			 num = num*i
 	return num/den
 
@@ -1135,11 +1135,11 @@ def combgen(n, m):
 	## """
 		if p < m:
 			if p == 0:
-				for i in xrange(n):
+				for i in range(n):
 					S[0] = i
 					ic = cgenrecurs(S, n, m, 1, C, ic)
 			else: # Here p > 0:
-				for i in xrange(S[p-1]+1,n):
+				for i in range(S[p-1]+1,n):
 					S[p] = i
 					ic = cgenrecurs(S, n, m, p+1, C, ic)
 		else: # Here p == m
@@ -1170,7 +1170,7 @@ def find_triangles(antennas):
 	ntri = np.size(itri,0)			   # Number of triangles
 	tri = np.empty(itri.shape, int)	   # Array of triangles
 	trid = np.empty(ntri, int)		   # Array of unique IDs for the triangles 
-	for i in xrange(ntri): 
+	for i in range(ntri): 
 		tri[i,:] = antarr[itri[i,:]]  # Triangle of antennae
 		# A triangle ID is made as a radix maxantnum number whose
 		# "digits" are the antenna numbers in the triangle.
@@ -1277,7 +1277,7 @@ def calc_closures(phase, tsec, blin):
 	tcphsec = np.zeros((maxcps), float) # Closure phase times in seconds
 
 	iclp = 0
-	for itim in xrange(ntimes):	  # Consider ith equal-time span
+	for itim in range(ntimes):	  # Consider ith equal-time span
 		i0 = ibeg[itim]			  # Span start in data[]
 		i1 = iend[itim]			  # Span end   in data[]
 		nbl = i1 - i0			  # Number of data rows in the span
@@ -1288,7 +1288,7 @@ def calc_closures(phase, tsec, blin):
 		itri = combgen(nant, 3)	  # Indices into ant to get triangles
 		ntri = np.size(itri,0)		 # Number of triangles in this span
 
-		for j in xrange(ntri): # Over all triangles in this span
+		for j in range(ntri): # Over all triangles in this span
 			a1, a2, a3 = ant[itri[j,:]] # Triangle of antennae
 			# Find indices of the three baselines made of the antennae
 			ib1 = i0 + np.where((bl[:,0] == a1) & (bl[:,1] == a2))[0][0]
@@ -1341,7 +1341,7 @@ def count_lines(filename, numcount=None):
 	2009, 10, 17, 21, 15, 56.21 3.62 03, 08
 	"""
 	if os.name == 'posix' and numcount == None: # The fastest way:
-		print os.popen('wc -l ' + filename).read().split()
+		print(os.popen('wc -l ' + filename).read().split())
 		lines = int(os.popen('wc -l ' + filename).read().split()[0])
 		return lines
 	# If not POSIX system, count using native python means:

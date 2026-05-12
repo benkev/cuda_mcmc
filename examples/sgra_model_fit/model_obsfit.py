@@ -65,7 +65,7 @@ eps = False
 argc = len(sys.argv)
 argv = sys.argv
 
-print 'argv = ', argv
+print('argv = ', argv)
 
 #
 # In parsing the command line options of the form <variable>=<value>:
@@ -75,17 +75,17 @@ print 'argv = ', argv
 if argc >= 3:
     modnum = int(argv[1])
     uvdata_file = argv[2]
-    print 'modnum = ', modnum, ', uvdata_file = ', uvdata_file
-    for i in xrange(3,argc):
+    print('modnum = ', modnum, ', uvdata_file = ', uvdata_file)
+    for i in range(3,argc):
         opt = argv[i].split('=')
         if len(opt) == 2:
             lv = opt[0]; rv = opt[1]
             if   lv == 'ng':
                 exec('ngrid = int(' + rv + ')')
-                print 'ngrid = ', ngrid
+                print('ngrid = ', ngrid)
             elif lv == 'xy':
                 exec('XYspan_uas = float(' + rv + ')')         
-                print 'XYspan_uas = ', XYspan_uas
+                print('XYspan_uas = ', XYspan_uas)
             elif lv == 'dxdeg': exec('delX_deg = float(' + rv + ')')         
             elif lv == 'dxuas': exec('delX_uas = float(' + rv + ')')         
             elif lv == 'xw': exec('XYwidth_uas = float(' + rv + ')')         
@@ -95,7 +95,7 @@ if argc >= 3:
             elif lv == 'nbeta': exec('nbeta = int(' + rv + ')') 
             elif lv == 'nseq':  exec('nseq =  int(' + rv + ')') 
             else:
-                print '\nInvalid variable "%s". Exiting.\n' % argv[i]
+                print('\nInvalid variable "%s". Exiting.\n' % argv[i])
                 sys.exit(0)
         elif opt == '-noplot' or opt == 'noplot':
             showPlot = False
@@ -107,9 +107,9 @@ if argc >= 3:
             eps = True
 
 elif argc < 3 or argc > 7:
-      print "\nInvalid command line\n"
-      print "Usage: model_obsfit.py {9|13} uvdata_file [nburn=400] " \
-            "[niter=1200] [nbeta=32] [nseq=8]\n" 
+      print("\nInvalid command line\n")
+      print("Usage: model_obsfit.py {9|13} uvdata_file [nburn=400] " \
+            "[niter=1200] [nbeta=32] [nseq=8]\n") 
       sys.exit(0);
 
 
@@ -122,18 +122,18 @@ elif argc < 3 or argc > 7:
 
 if ngrid < 0:
     ngrid = -ngrid
-    print '\nGrid size must be set. Example: ng=100. Exiting.\n'
+    print('\nGrid size must be set. Example: ng=100. Exiting.\n')
     sys.exit(0)
     
 if (XYspan_uas < 0) and (delX_uas < 0) and (delX_deg < 0):
-    print '\nBrightness domain size must be set, either as grid increment ' \
-          'or as X and Y dimensions.'
-    print 'Examples:'
-    print '      XYspan_uas=170. (Size in X and Y in micro arcsrconds)'
-    print 'or    dxdeg=4.4437147130151E-10  ' \
-          '(grid increment in degrees, as in FITS header)'
-    print 'or    dxuas=0.7992       (grid increment in mucro arcseconds)'
-    print 'Exiting.'
+    print('\nBrightness domain size must be set, either as grid increment ' \
+          'or as X and Y dimensions.')
+    print('Examples:')
+    print('      XYspan_uas=170. (Size in X and Y in micro arcsrconds)')
+    print('or    dxdeg=4.4437147130151E-10  ' \
+          '(grid increment in degrees, as in FITS header)')
+    print('or    dxuas=0.7992       (grid increment in mucro arcseconds)')
+    print('Exiting.')
     sys.exit(0)
 
 ## if XYspan_uas < 0:
@@ -237,8 +237,8 @@ elif modnum == 13:
                  (0., 1.), (0.1, 2.), (0.1, 1.), (0., 1.), \
              (-pi, pi), (0., pi/2.), (-pi, pi), (-pi, pi)), dtype=float32)
 else:
-    print "Wrong number of model parameters; you entered ", modnum,
-    print " may be either 9 or 13"
+    print("Wrong number of model parameters; you entered ", modnum, end=' ')
+    print(" may be either 9 or 13")
     sys.exit(0)
     
 pmint = copy(bnd[:,0]); pmaxt= copy(bnd[:,1])
@@ -247,7 +247,7 @@ imodel = {9:1, 13:2}[modnum]  # Model code, 1 or 2
 
 nrndst = int32(nseq*nbeta)
 seed = uint64(np.trunc(1e6*time.time()%(10*nrndst)))
-print 'seed = ', seed
+print('seed = ', seed)
 
 
 sgra = imgpu.Mcgpu_Sgra(uvfile=uvdata_file, pdescr=pdescr, ptotal=ptotal, \
@@ -294,7 +294,7 @@ im = chi2.argmin()   # Indices of the chi^2 minimums
 nseqitr = int32(sgra.nseq*sgra.niter)
 
 pout1 = zeros((sgra.nprm,nseqitr), dtype=float32)
-for i in xrange(sgra.nprm):
+for i in range(sgra.nprm):
     pout1[i,:] = sgra.pout_4d[i,0,:,:].flatten()
 
 #
@@ -306,20 +306,20 @@ f = uvdata_file.split('_')
 
 fbn = re.findall('00[0-9]_00[0-9]_0[0-9]{2}', uvdata_file)
 
-print 'fbn = re.findall(...)'
+print('fbn = re.findall(...)')
 
 if fbn == []: # Like model_9prm_sn_uvdata.txt
-    if   uvdata_file.find('_snda') <> -1: cnoise = '_snda'
-    elif uvdata_file.find('_snd') <> -1: cnoise = '_snd'
-    elif uvdata_file.find('_sn') <> -1: cnoise = '_sn'
-    elif uvdata_file.find('_n') <> -1: cnoise = '_n'
+    if   uvdata_file.find('_snda') != -1: cnoise = '_snda'
+    elif uvdata_file.find('_snd') != -1: cnoise = '_snd'
+    elif uvdata_file.find('_sn') != -1: cnoise = '_sn'
+    elif uvdata_file.find('_n') != -1: cnoise = '_n'
     cnam = '_'.join(uvdata_file.split('_')[:-1])   # Cut away 'uvdata.txt'
     czsp = ''
     crot = ''
 
-print 'if fbn == []'
+print('if fbn == []')
 
-if fbn <> []: # Like 000_001_002sn_uvdata.txt
+if fbn != []: # Like 000_001_002sn_uvdata.txt
     f = [fbn[0], '', '', '000']      # temporarily 000 degrees of rotation
     if uvdata_file[11] == 'n':
         cnoise = '_n'
@@ -359,13 +359,13 @@ elif len(f) == 5:           # Like 000208_1_1_270snd_uvdata.txt
 
 elif len(f) == 2:           # Like 08068snd_uvdata.txt
     cnam = f[0]                # Like 08068snd
-    if cnam.find('snd', -3) <> -1:
+    if cnam.find('snd', -3) != -1:
         cnoise = '_snd'
         cnam = cnam[:-3]
-    elif cnam.find('sn', -3) <> -1:
+    elif cnam.find('sn', -3) != -1:
         cnoise = '_sn'
         cnam = cnam[:-2]
-    elif cnam.find('n', -3) <> -1:
+    elif cnam.find('n', -3) != -1:
         cnoise = '_n'
         cnam = cnam[:-1]
     else:
@@ -410,7 +410,7 @@ elif nrow == 1:
     elif sgra.nprm == 1:
         figure(figsize=(9,7));
 
-for i in xrange(sgra.nprm):
+for i in range(sgra.nprm):
     j = sgra.ivar[i]
     ax = subplot(nrow, ncol, i+1)
     if pdescr[i] == 2:
@@ -517,11 +517,11 @@ else:               # For ODD  ngrid
 
 
 mus = zeros(sgra.nprm)
-for i in xrange(sgra.nprm):
+for i in range(sgra.nprm):
     mus[i] = mean(pout1[i,:])
 
 prm_hm = copy(sgra.ptotal)
-for i in xrange(sgra.nptot):
+for i in range(sgra.nptot):
     if sgra.invar[i] >= 0: prm_hm[i] = mus[sgra.invar[i]]
 
 
@@ -552,7 +552,7 @@ chi2hm, vicpm, pham, chi2m, datm = sgra.calcmodchi2(prm_hm)
 
 chi2hm_r = chi2hm/(sgra.nvis+sgra.ncph-sgra.nprm-1) # Reduced chi^2
 
-print 'Histogram Mean Model Brightnes th=%g, thd=%g' % (th, thd)
+print('Histogram Mean Model Brightnes th=%g, thd=%g' % (th, thd))
 
 if modnum == 9:
 
@@ -594,10 +594,10 @@ xticks([80, 60,40,20, 0, -20, -40, -60, -80])
 yticks([80, 60,40,20, 0, -20, -40, -60, -80])    
 #show()
         
-print 'Histogram mean params = '
-for i in xrange(sgra.nptot): print '%g\t' % prm_hm[i],
-print
-print 'Histmean chi^2 = %g, reduced chi^2 = %g' % (chi2hm, chi2hm_r)
+print('Histogram mean params = ')
+for i in range(sgra.nptot): print('%g\t' % prm_hm[i], end=' ')
+print()
+print('Histmean chi^2 = %g, reduced chi^2 = %g' % (chi2hm, chi2hm_r))
 
 
 # ftxt = open("hm_%s_%dprm_%s_%s_%sdeg%s_burn%03d_iter%05d.txt"  %  \
@@ -639,7 +639,7 @@ show() if showPlot else close()
 #
 
 prm_bf = copy(sgra.ptotal)
-for i in xrange(sgra.nptot):
+for i in range(sgra.nptot):
     if sgra.invar[i] >= 0: prm_bf[i] = pout[sgra.invar[i],im]
 
 if modnum == 9:
@@ -719,10 +719,10 @@ xticks([80, 60,40,20, 0, -20, -40, -60, -80])
 yticks([80, 60,40,20, 0, -20, -40, -60, -80])    
 #show()
         
-print 'Best fit params = '
-for i in xrange(sgra.nptot): print '%g\t' % prm_bf[i],
-print
-print 'Bestfit chi^2 = %g, reduced chi^2 = %g' % (chi2bf, chi2bf_r)
+print('Best fit params = ')
+for i in range(sgra.nptot): print('%g\t' % prm_bf[i], end=' ')
+print()
+print('Bestfit chi^2 = %g, reduced chi^2 = %g' % (chi2bf, chi2bf_r))
 
 # ftxt = open("bf_%s_%dprm_%s_%s_%sdeg%s_burn%03d_iter%05d.txt"  %  \
 #         (cnam, modnum, czsp, crad, crot, cnoise, nburn, niter), 'w')
@@ -791,7 +791,7 @@ show() if showPlot else close()
 # Plot the phases at UV points
 #
 rtod = 180./np.pi
-plotPhases = any(sgra.phase <> 0)
+plotPhases = any(sgra.phase != 0)
 
 subplot2grid((16,16),(2,9), rowspan=12, colspan=6)
 
