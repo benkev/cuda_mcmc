@@ -11,7 +11,7 @@ export MODELDIR       # The current dir must have model.cuh to include
 
 all:
 	cd $(CUDA_MCMC)/src && $(MAKE) purge \
-			&&  setup_mcmc.py build_ext --inplace \
+			&& python setup_mcmc.py build_ext --inplace \
 			&& $(MAKE) clean && $(MAKE) install \
 			&& $(MAKE) scatter_fits \
 			&& $(MAKE) deblur_uv \
