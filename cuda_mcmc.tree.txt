@@ -1,0 +1,87 @@
+.
+├── cuda_mcmc.tree_txt
+├── doc
+│   ├── aastex.cls
+│   ├── blackhole_static_image_geom_reconstr.bbl
+│   ├── blackhole_static_image_geom_reconstr.bib
+│   ├── CUDA_blocks_and_threads1.eps
+│   ├── CUDA_blocks_and_threads.jpeg
+│   ├── gpu_mcmc_soft.bbl
+│   ├── gpu_mcmc_soft.pdf
+│   ├── gpu_mcmc_soft_py2.pdf
+│   ├── gpu_mcmc_soft_py2.tex
+│   ├── gpu_mcmc_soft.tex
+│   ├── gpu_mcmc_soft.toc
+│   ├── gpu_mcmc_software_hierarchy.eps
+│   ├── gpu_mcmc_software_hierarchy.svg
+│   ├── irregular_threads.svg
+│   ├── mcmc_cuda_hardware.eps
+│   ├── mcmc_cuda_hardware.svg
+│   └── README.txt
+├── examples
+│   ├── search_Rosenbrock
+│   │   ├── Makefile
+│   │   ├── model.cuh
+│   │   ├── plot_Rosenbrock.py
+│   │   ├── README.txt
+│   │   ├── search_Rosenbrock_api.py
+│   │   └── search_Rosenbrock.py
+│   ├── sgra_model_fit
+│   │   ├── 000000_1_1_000.fits
+│   │   ├── 000000_1_1_000snd_uvdata.txt
+│   │   ├── 000008_1_1_000.fits
+│   │   ├── 000008_1_1_000snd_uvdata.txt
+│   │   ├── 000018_1_1_000.fits
+│   │   ├── 000018_1_1_000snd_uvdata.txt
+│   │   ├── 000208_1_1_030.fits
+│   │   ├── 000208_1_1_030snd_uvdata.txt
+│   │   ├── 000508_1_1_000.fits
+│   │   ├── 000508_1_1_000snd_uvdata.txt
+│   │   ├── 000600_1_1_000.fits
+│   │   ├── 000600_1_1_000snd_uvdata.txt
+│   │   ├── 050008_1_1_000.fits
+│   │   ├── 050008_1_1_000snd_uvdata.txt
+│   │   ├── 090018_1_1_120.fits
+│   │   ├── 090018_1_1_120snd_uvdata.txt
+│   │   ├── imgpu.pyc
+│   │   ├── Makefile
+│   │   ├── maps_eht_noise.sh
+│   │   ├── maps_eht.sh
+│   │   ├── model.cuh
+│   │   ├── model_obsfit.py
+│   │   ├── obsdatafit.pyc
+│   │   ├── pherr_vs_snr.txt
+│   │   ├── plot_fits.py
+│   │   ├── plot_xringaus.py
+│   │   ├── qk_rotzoom2fits.py
+│   │   ├── README.txt
+│   │   ├── scatter_maps_deblur.sh
+│   │   └── setup_mcmc.py
+│   └── solvsys
+│       ├── Makefile
+│       ├── model.cuh
+│       ├── README.txt
+│       ├── solvsys_api.py
+│       └── solvsys.py
+├── Makefile
+├── README.txt
+├── src
+│   ├── deblur_uv.c
+│   ├── gpu_mcmc.cu
+│   ├── imgpu.py
+│   ├── list_gpus.cu
+│   ├── Makefile
+│   ├── mcmc.h
+│   ├── mcmc_interf.pyx
+│   ├── mcmcjob.cu
+│   ├── mcmcjob.cuh
+│   ├── obsdatafit.py
+│   ├── scatter_fits.c
+│   └── setup_mcmc.py
+└── template
+    ├── Makefile
+    ├── model.cuh
+    ├── README.txt
+    └── template.py
+
+8 directories, 77 files
