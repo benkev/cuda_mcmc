@@ -26,7 +26,7 @@
 
 CC=gcc
 CXX=nvcc
-CXXFLAGS=  -arch=sm_30 -g -Xcompiler -fPIC -Xcompiler -fno-exceptions
+CXXFLAGS=  -g -Xcompiler -fPIC -Xcompiler -fno-exceptions
 OBJECTS= mcmcjob.o gpu_mcmc.o
 BASEDIR = $(PWD)
 

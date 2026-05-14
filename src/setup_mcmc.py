@@ -11,7 +11,7 @@ import os
 import numpy as np
 
 bdir = os.getcwd()
-# os.system('make')  # CONSIDER COMMENTING THIS OUT - run make separately
+os.system('make')
 
 ext_mods = Extension("mcmc_interf",
     sources = ["mcmc_interf.pyx"],

@@ -204,7 +204,7 @@
 import numpy as np
 cimport numpy as np
 
-cdef extern from "/usr/local/cuda/include/cuda_runtime.h":
+cdef extern from "cuda_runtime_api.h":
     void cudaDeviceReset()
 
 # cdef extern from "mcmcjob.cuh":
