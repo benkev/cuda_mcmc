@@ -8,14 +8,12 @@ from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
 import os
-import numpy as np
 
 bdir = os.getcwd()
-# os.system('make')  # CONSIDER COMMENTING THIS OUT - run make separately
+os.system('make')
 
 ext_mods = Extension("mcmc_interf",
-    sources = ["mcmc_interf.pyx"],
-    include_dirs = [np.get_include()],  # ADDED - fixes your error
+    sources = ["mcmc_interf.pyx"],\
     library_dirs = [bdir, '/usr/local/cuda/lib64'],
     libraries = ['mcmcuda', 'cudart', 'm', 'stdc++'])
 
