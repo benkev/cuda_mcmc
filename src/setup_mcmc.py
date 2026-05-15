@@ -11,12 +11,13 @@ import os
 import numpy as np
 
 bdir = os.getcwd()
-os.system('make')
+# os.system('make')
 
 ext_mods = Extension("mcmc_interf",
     sources = ["mcmc_interf.pyx"],
     include_dirs = [np.get_include()],  # ADDED - fixes your error
-    library_dirs = [bdir, '/usr/local/cuda/lib64'],
+#    library_dirs = [bdir, '/usr/local/cuda/lib64'],
+    library_dirs = [bdir, '/usr/lib/x86_64-linux-gnu'],
     libraries = ['mcmcuda', 'cudart', 'm', 'stdc++'])
 
 setup(

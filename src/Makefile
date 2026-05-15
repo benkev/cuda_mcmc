@@ -1,7 +1,7 @@
 #
 # Makefile to build libmcmcuda.a library with the CUDA portion of mcmcfit:
 # mcmcjob.o and gpu_mcmc.o. The library is used by setup_mcmc.py to build
-# the Python extension module mcmc_interf.so. 
+# the Python extension module mcmc_interf.*.so. 
 # Some utility programs are also built.
 # The command
 # $ make install puts the executables to ~/bin/ and the python modules
@@ -15,7 +15,7 @@
 # is exported as the environment variable MODELDIR and is used ti #include
 # model.cuh as a header file in gpu_mcmc.cu at its compilation.
 #
-# To build the extension module mcmc_interf.so use the command(s):
+# To build the extension module mcmc_interf.*.so use the command(s):
 #
 # make purge; python setup_mcmc.py build_ext --inplace; make clean
 #
@@ -28,7 +28,7 @@ CC=gcc
 CXX=nvcc
 CXXFLAGS=  -g -Xcompiler -fPIC -Xcompiler -fno-exceptions
 OBJECTS= mcmcjob.o gpu_mcmc.o
-BASEDIR = $(PWD)
+BASEDIR = $(CURDIR)
 
 .PHONY: all clean purge install
 
@@ -61,7 +61,7 @@ list_gpus: list_gpus.cu
 
 install:
 	mkdir -p ~/lib64/python        # Create the directory if it does not exist
-	cp mcmc_interf.so ~/lib64/python
+	cp mcmc_interf.*.so ~/lib64/python
 	cp imgpu.py  ~/lib64/python
 	cp obsdatafit.py ~/lib64/python
 
@@ -69,7 +69,7 @@ clean:
 	rm -fR lib*.a *.o mcmc_interf.c build/ 
 
 purge:  clean
-	rm -fR mcmc_interf.so *.pyc scatter_fits deblur_uv list_gpus
+	rm -fR mcmc_interf.*.so *.pyc scatter_fits deblur_uv list_gpus
 
 
 
