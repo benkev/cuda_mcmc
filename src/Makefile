@@ -32,7 +32,7 @@ BASEDIR = $(CURDIR)
 
 .PHONY: all clean purge install
 
-all:    libmcmcuda.a
+all:    libmcmcuda.a list_gpus
 
 libmcmcuda.a:   $(OBJECTS) 
 	   $(CXX) -Xcompiler -Wl, -Xcompiler -no-undefined -lib $(LIBS) \
@@ -45,22 +45,22 @@ gpu_mcmc.o: gpu_mcmc.cu
 	$(CXX) $(CXXFLAGS) -I$(MODELDIR) -c gpu_mcmc.cu -o gpu_mcmc.o
 
 scatter_fits: scatter_fits.c
-	mkdir -p ~/bin                 # Create the directory if it does not exist
-	$(CC) -o scatter_fits scatter_fits.c -lm -lnsl -lcfitsio -lfftw3    && \
-	cp scatter_fits ~/bin
+	mkdir -p ~/bin              # Create the directory if it does not exist
+	$(CC) -o scatter_fits scatter_fits.c -lm -lcfitsio -lfftw3    && \
+            cp scatter_fits ~/bin
 
 deblur_uv: deblur_uv.c
-	mkdir -p ~/bin                 # Create the directory if it does not exist
-	$(CC) -o deblur_uv deblur_uv.c -lm -lnsl -lcfitsio -lfftw3    && \
-	cp deblur_uv ~/bin
+	mkdir -p ~/bin              # Create the directory if it does not exist
+	$(CC) -o deblur_uv deblur_uv.c -lm    && \
+            cp deblur_uv ~/bin
 
 list_gpus: list_gpus.cu
-	mkdir -p ~/bin                 # Create the directory if it does not exist
+	mkdir -p ~/bin              # Create the directory if it does not exist
 	$(CXX) list_gpus.cu -o list_gpus    && \
-	cp list_gpus ~/bin
+            cp list_gpus ~/bin
 
 install:
-	mkdir -p ~/lib64/python        # Create the directory if it does not exist
+	mkdir -p ~/lib64/python     # Create the directory if it does not exist
 	cp mcmc_interf.*.so ~/lib64/python
 	cp imgpu.py  ~/lib64/python
 	cp obsdatafit.py ~/lib64/python

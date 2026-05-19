@@ -1,13 +1,13 @@
 ###########################################################
-#														  #
-# imgpu.py												  #
-#														  #
+#                                                         #
+# imgpu.py                                                #
+#                                                         #
 # Module for fitting image models to radiointerferometer  #
-# data. The Markov Chain Monte-Carlo (MCMC) method is	  #
-# used. The MCMC is implemented as a set of "kernels"	  #
-# written in CUDA C language.							  #
-#														  #
-# Created: 14 May 2013 by Leonid Bevkevitch				  #
+# data. The Markov Chain Monte-Carlo (MCMC) method is     #
+# used. The MCMC is implemented as a set of "kernels"     #
+# written in CUDA C language.                             #
+#                                                         #
+# Created: 14 May 2013 by Leonid Bevkevitch               #
 ###########################################################
 #
 import numpy as np

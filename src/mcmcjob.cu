@@ -840,7 +840,7 @@ void CMcmcFit::do_mcmc_on_gpu() {
 
   run_mcmc(this, dev_mcmc);
 
-  printf("sizeof(CMcmcFit) = %d B\n", sizeof(CMcmcFit));
+  printf("sizeof(CMcmcFit) = %lu B\n", sizeof(CMcmcFit));
 
   CUDA_CALL(cudaMemcpy(this, dev_mcmc, sizeof(CMcmcFit), DtoH));
   CUDA_CALL(cudaFree(dev_mcmc));

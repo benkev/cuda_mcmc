@@ -10,6 +10,8 @@
  * Build:
  *
  * gcc -o deblur_uv deblur_uv.c -lm -lnsl -lcfitsio -lfftw3
+ *     It turns out that it builds well with -lm only: 
+ * gcc  -o deblur_uv deblur_uv.c -lm
  *
  */
 

@@ -8,6 +8,8 @@
  * COMPILATION:
  *
  * gcc -o scatter_fits scatter_fits.c -lm -lnsl -lcfitsio -lfftw3
+ *   It compiles well without -lnsl:
+ * gcc -o scatter_fits scatter_fits.c -lm -lcfitsio -lfftw3
  *
  */
 
@@ -187,7 +189,7 @@ int main(int argc, char *argv[])
 
 
   FILE *fd = fopen("uv.txt", "w");
-  printf("nelements=%d\n", nelements);
+  printf("nelements=%ld\n", nelements);
 
   // apply scattering (Convolution==multiplication in UV domain)
   for (i=0;i<nelements;i++){

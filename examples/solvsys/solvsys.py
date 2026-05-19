@@ -129,4 +129,4 @@ for im in range(n_best):
 	print('%10f %10f %10f' % (pout_best[0,im], pout_best[1,im], chi2_min[im]))
 
 
-show()
+# show()
