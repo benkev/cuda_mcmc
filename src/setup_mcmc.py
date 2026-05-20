@@ -15,9 +15,10 @@ os.system('make')
 
 ext_mods = Extension("mcmc_interf",
     sources = ["mcmc_interf.pyx"],
-    include_dirs = [np.get_include()],  # ADDED - fixes your error
-#    library_dirs = [bdir, '/usr/local/cuda/lib64'],
-    library_dirs = [bdir, '/usr/lib/x86_64-linux-gnu'],
+    include_dirs = [np.get_include(),
+      '/usr/local/cuda-13.1/targets/x86_64-linux/include'],  # ADDED
+#    library_dirs = [bdir, '/usr/lib/x86_64-linux-gnu'],
+    library_dirs = [bdir, '/usr/local/cuda-13.1/targets/x86_64-linux/lib'],
     libraries = ['mcmcuda', 'cudart', 'm', 'stdc++'])
 
 setup(
