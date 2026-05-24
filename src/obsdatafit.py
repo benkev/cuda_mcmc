@@ -9,14 +9,17 @@ from time import strptime, strftime, gmtime
 from calendar import timegm
 from pylab import *
 from numpy import *
-from bitstring import BitStream
+import numpy as np
+# from bitstring import BitStream
+import struct
 from matplotlib.pyplot import *
-from matplotlib.mlab import find
+# from matplotlib.mlab import find
 from scipy.special import jv, jn, jvp, j0, j1
 import scipy.ndimage as sn   # Multidimensional image processing library
 from mpl_toolkits.mplot3d import axes3d
 from numpy.fft import ifftshift, ifft2, fftshift, fft2
-import pyfits as pf
+# import pyfits as pf
+import astropy.io.fits as pf      # Modern pyfits
 import os
 import re
 
@@ -795,8 +798,9 @@ def count_lines(filename, numcount=None):
         return lines
     elif numcount != None:
         # Regex pattern to match any numeric string, be it integer or float
-        p = re.compile('[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|'\
-                       '[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+');
+        p = re.compile(r'[+-]?\d+\.?\d*[eE][+-]?\d+|'\
+                       r'[+-]?\d*\.?\d+[eE][+-]?\d+|'\
+                       r'[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+');
         # Count only the lines with exactly numcount numbers
         f = open(filename, 'r')
         nrows = 0
@@ -834,8 +838,8 @@ def readamp(ulam, vlam, amp, phase, data_file, nlines):
     ##    00        (     0.000000,     0.000000)     0.00    0.00000
     """
     # Regex pattern to match any numeric string, be it integer or float
-    p = re.compile('[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
-                       '[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
+    p = re.compile(r'[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
+                   r'[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
     
     fp = open(data_file, "r");
 
@@ -884,8 +888,8 @@ def readamp1(amp_data_file):
     Returns ulam, vlam, amp and phase arrays
     """
     # Regex pattern to match any numeric string, be it integer or float
-    p = re.compile('[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
-                       '[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
+    p = re.compile(r'[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
+                   r'[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
     
     n = count_lines(amp_data_file)
     
@@ -957,8 +961,8 @@ def readamp2(amp_data_file):
     Returns ulam, vlam, amp, phase, tsec, bl
     """
     # Regex pattern to match any numeric string, be it integer or float
-    p = re.compile('[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
-                       '[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
+    p = re.compile(r'[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
+                   r'[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
     
     n = count_lines(amp_data_file)
     
@@ -1047,8 +1051,8 @@ def readamp3(amp_data_file):
     Returns ulam, vlam, amp, phase, sigma, tsec, bl 
     """
     # Regex pattern to match any numeric string, be it integer or float
-    p = re.compile('[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
-                       '[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
+    p = re.compile(r'[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
+                   r'[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
     
     n = count_lines(amp_data_file)
     
@@ -1141,8 +1145,8 @@ def readamp4(amp_data_file):
     Returns ulam, vlam, wlam, amp, phase, chan, tsec, weight, sigma, bl
     """
     # Regex pattern to match any numeric string, be it integer or float
-    p = re.compile('[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
-                       '[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
+    p = re.compile(r'[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
+                   r'[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
     
     n = count_lines(amp_data_file)
     
@@ -1253,8 +1257,8 @@ def readcphs(tcode, cphs, gha, cuv, cphs_data_file, nlines):
     """
     sgra_ra_hr = 17.761111; # sgra_ra in hours 
     # Regex pattern to match any numeric string, be it integer or float
-    p = re.compile('[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
-                       '[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
+    p = re.compile(r'[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
+                   r'[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
     fp = open(cphs_data_file, "r");
     i = 0
     while True:
@@ -1323,8 +1327,8 @@ def readcphs1(cphs_data_file):
     sgra_ra_hr = 17.761111; # sgra_ra in hours
     
     # Regex pattern to match any numeric string, be it integer or float
-    p = re.compile('[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
-                       '[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
+    p = re.compile(r'[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
+                   r'[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
 
     m = count_lines(cphs_data_file)
     
@@ -1413,8 +1417,8 @@ def readcphs2(cphs_data_file):
     sgra_ra_hr = 17.761111; # sgra_ra in hours
     
     # Regex pattern to match any numeric string, be it integer or float
-    p = re.compile('[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
-                       '[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
+    p = re.compile(r'[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
+                   r'[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
 
     m = count_lines(cphs_data_file)
     
@@ -2169,9 +2173,11 @@ def gausring (ulam, vlam, zsp, gsize, radius, theta, re, im):
     # Reduce closure phase angle to [-180..+180]
     # First reduce to [-2pi ..+2pi]
     gphase = gphase - 2.*pi*trunc(gphase/(2.*pi)) # Reduce to [-2pi..+2pi]
-    # Then to [-pi ..+pi] 
-    idx1 = find(gphase < -pi)
-    idx2 = find(gphase > pi)
+    # Then to [-pi ..+pi]                 -- DO IT IN A CORRECT WAY !!!!!!!!!!!
+    # idx1 = find(gphase < -pi)
+    # idx2 = find(gphase > pi)
+    idx1 = np.where(gphase < -pi)[0]
+    idx2 = np.where(gphase > pi)[0]
     gphase[idx1] += 2.*pi
     gphase[idx2] -= 2.*pi
 
@@ -2273,9 +2279,11 @@ def compute_chi2_cph(visfun, ulam, vlam, cphs, cuv, \
         # First reduce to [-2pi ..+2pi]
         phase_diff = phase_diff - 2.*pi*trunc(phase_diff/(2.*pi))
         # Then to [-pi .. +pi]
-        idx = find(phase_diff < -pi)
+#        idx = find(phase_diff < -pi)
+        idx = np.where(phase_diff < -pi)[0]
         phase_diff[idx] += 2.*pi
-        idx = find(phase_diff > pi)
+#        idx = find(phase_diff > pi)
+        idx = np.where(phase_diff > pi)[0]
         phase_diff[idx] -= 2.*pi
         chi_sq_cph += sum(phase_diff**2)/sig_sq_cph;
         
@@ -2838,31 +2846,32 @@ def read_Visibility_dat(vis_file):
     array. By convention, such files have names like *_Visibility.dat
     """
     
-    a = fromfile(vis_file)
-    
-    #
-    # The first 8 bytes in the file contain two 32-bit integers.
-    # They are the image dimensions, nrows and ncols. Here the both
-    # are packed in one 64-bit float (double).
-    #
-    
-    sz = a[0]      # One float64 variable holding two 32-bit integers
-    a = a[1:]      # Remove the 0th element
-    
-    #
-    # Extract nrows and ncols from sz
-    #
-    b = BitStream(float=sz, length=64)
-    b = b.readlist([32, 32])
-    nrows = b[0].int
-    ncols = b[1].int
+    # a = fromfile(vis_file)
+    with open(vis_file, 'rb') as f:
+        #
+        # The first 8 bytes in the file contain two 32-bit integers.
+        # They are the image dimensions, nrows and ncols. Here the both
+        # are packed in one 64-bit float (double).
+        #
+        header = f.read(8)           # Read first 8 bytes
+        rest = f.read()              # Read the rest of the file
+
+    # Unpack the 8-byte header as double (float64)
+    sz = struct.unpack('>d', header)[0]  # '>d' for big-endian double
+        
+    # View the double as two 32-bit ints
+    # First, convert it to 64-bit int
+    sz_int = struct.unpack('>Q', struct.pack('>d', sz))[0]
+    # Extract nrows and ncols from sz_int
+    nrows = (sz_int >> 32) & 0xFFFFFFFF
+    ncols = sz_int & 0xFFFFFFFF
 
     #
     # Extract real and imaginary parts into separate arrays
     # In FITS files data are columnwise, so after reshape we make transpose
     #
-    re1 = a[::2]   # Even-indexed numbers are real parts
-    im1 = a[1::2]  # Odd-indexed numbers are imaginary parts
+    re1 = rest[::2]   # Even-indexed numbers are real parts
+    im1 = rest[1::2]  # Odd-indexed numbers are imaginary parts
     re1 = re1.reshape((nrows,ncols)).transpose()
     im1 = im1.reshape((nrows,ncols)).transpose()
 
@@ -2872,7 +2881,6 @@ def read_Visibility_dat(vis_file):
     #
     reV = fftshift(re1)                  #[:,::-1]
     imV = fftshift(im1)                  #[:,::-1]
-    
     
     Vis = reV + 1j*imV   # Make complex visibility image
 
@@ -2922,8 +2930,8 @@ def read_fits(fits_file, param=False, xlr=False):
                 parsep = True   # Start parsing the parameters
         if sprm != '':
             #print 'sprm=', sprm
-            p = re.compile('[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE]' \
-                           '[+-]?\d+|[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
+            p = re.compile(r'[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE]' \
+                           r'[+-]?\d+|[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
             prms = np.float_(p.findall(sprm))
         else:
             prms = None
@@ -3286,8 +3294,8 @@ def read_vincent_cphs():
     utsec = np.zeros((nlines), np.float)
 
     # Pattern to match a number string
-    p = re.compile('[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
-                   '[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
+    p = re.compile(r'[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
+                   r'[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
 
     fin = open('sgra_cphases_vincent.txt', 'r')
     for i in range(nhdr): fin.readline(),   # Skip header

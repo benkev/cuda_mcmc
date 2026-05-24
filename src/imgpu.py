@@ -1077,26 +1077,27 @@ class Mcgpu_Sgra(Mcgpu):
 
 
 def cbinom(n, m):
-	"""
-	Return value of m-th binomial coefficient of (x+y)^n expansion.
-	Or, which is the same, the number of m-subsets of a set with
-	n elements
-	"""
-	if n < 0 or m < 0 or m > n:
-		return -1
-	if m == 0 or m == n:
-		return 1
-	if m == 1 or m == n-1:
-		return n
-	num = n
-	den = m
-	if m > 2:
-		for i in range(m-1,1,-1):
-			den = den*i
-	if n > 2:
-		for i in range(n-1,n-m,-1):
-			 num = num*i
-	return num/den
+    """
+    Returns value of m-th binomial coefficient of (x+y)^n expansion.
+    Or, which is the same, the number of m-subsets of a set with
+    n elements
+    Note: the returned coefficient type is int.
+    """
+    if n < 0 or m < 0 or m > n:
+        return -1
+    if m == 0 or m == n:
+        return 1
+    if m == 1 or m == n-1:
+        return n
+    num = n
+    den = m
+    if m > 2:
+        for i in range(m-1,1,-1):
+            den = den*i
+    if n > 2:
+        for i in range(n-1,n-m,-1):
+            num = num*i
+    return num//den
 
 
 
@@ -1355,8 +1356,9 @@ def count_lines(filename, numcount=None):
 		return lines
 	elif numcount != None:
 		# Regex pattern to match any numeric string, be it integer or float
-		p = re.compile('[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|'\
-					   '[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+');
+		p = re.compile(r'[+-]?\d+\.?\d*[eE][+-]?\d+|'\
+                       r'[+-]?\d*\.?\d+[eE][+-]?\d+|'\
+					   r'[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+');
 		# Count only the lines with exactly numcount numbers
 		f = open(filename, 'r')
 		nrows = 0
@@ -1396,8 +1398,9 @@ def read_uvdata(uv_file):
 	Returns ulam, vlam, wlam, amp, phase, blin, tsec, sig, chan, wei
 	"""
 	# Regex pattern to match any numeric string, be it integer or float
-	p = re.compile('[+-]?\d+\.?\d*[eE][+-]?\d+|[+-]?\d*\.?\d+[eE][+-]?\d+|' \
-					   '[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
+	p = re.compile(r'[+-]?\d+\.?\d*[eE][+-]?\d+|'\
+                   r'[+-]?\d*\.?\d+[eE][+-]?\d+|' \
+				   r'[+-]?\d+\.?\d*|[+-]?\d*\.?\d+|[+-]?\d+')
 	
 	n = count_lines(uv_file)
 	

@@ -18,7 +18,7 @@ ext_mods = Extension("mcmc_interf",
     include_dirs = [np.get_include(),
       '/usr/local/cuda-13.1/targets/x86_64-linux/include'],  # ADDED
 #    library_dirs = [bdir, '/usr/lib/x86_64-linux-gnu'],
-    library_dirs = [bdir, '/usr/local/cuda-13.1/targets/x86_64-linux/lib'],
+    library_dirs = [bdir, '/usr/local/cuda-12.2/targets/x86_64-linux/lib'],
     libraries = ['mcmcuda', 'cudart', 'm', 'stdc++'])
 
 setup(

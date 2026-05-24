@@ -391,9 +391,9 @@ else:
 #
 
 if sgra.nprm%ncol:
-    nrow = sgra.nprm/ncol + 1
+    nrow = sgra.nprm//ncol + 1
 else:
-    nrow = sgra.nprm/ncol 
+    nrow = sgra.nprm//ncol 
 
 if nrow >= 3:
     figure(figsize=(19.5,13.5));
@@ -430,9 +430,9 @@ for i in range(sgra.nprm):
     #bf = pout1[i,im]
     
     plot([mu, mu], [0, ltop], 'k', lw=3, \
-              label='mean$=%6.2f$' % mu)
+              label=r'mean$=%6.2f$' % mu)
     plot([mumsig, mumsig], [0, ltop], 'g--', lw=2, \
-              label='std$=\pm%6.3f$' % sig)
+              label=r'std$=\pm%6.3f$' % sig)
     plot([mupsig, mupsig], [0, ltop], 'g--', lw=2)
     plot([bf, bf], [0, ltop], 'r', lw=3, \
               label='bestfit$=%6.2f$' % bf)
