@@ -53,14 +53,14 @@ This document describes the software \verb|cuda_mcmc| designed to greatly accele
 
 In the problems on finding global extrema of non-linear functions, the gradient methods of optimization are powerless before multimodal functions, non-continuous functions, or functions some (or all) of whose arguments can only take discrete or integer values. Statistical methods can be more helpful for this class of problems. 
 
-The method described in this paper initially was used in a radio astronomy problem of a black hole event horizon imaging \citep{BenkevBHM}. The sparse (and scarce) observation data from the VLBI radio array pointing at the Sagittarius A* (Sgr A*) object, the super massive black hole at the center of our Galaxy, did not allow using traditional imaging tools. However, some existing models could give approximate notion of the black hole look. We decided to create a model of the black hole image composed of simple geometric forms that allowed analytical Fourier transforms into the visibility domain. The model got the name ``\verb|xringaus|": its elements were ``slashed" cylinders and a Gaussian. Varying the geometry and intensities of the forms, the model was supposed to take approximate images of many of the black hole states. This gave a chance to measure some of the real black hole parameters. Finding the model whose brightness image is the closest to the one of the real black hole required fitting the model in visibility domain to the observation data. This was a problem on finding the parameters $\bfp=(p_1,p_2,...,p_{N_p})$ of the visibility model $x^{\rm mod}(\bfp,u_i,v_i)$ that would give the absolute (or global) minimum to the $\chi^2$ calculated as
+The method described in this paper initially was used in a radio astronomy problem of a black hole event horizon imaging \citep{BenkevBHM}. The sparse (and scarce) observation data from the VLBI radio array pointing at the Sagittarius A* (Sgr A*) object, the super massive black hole at the center of our Galaxy, did not allow using traditional imaging tools. Some existing models could give approximate notion of the black hole look, but they took hours of heavy computations and were difficult to fit to real observation data. The fitting requires multiple variations of the model parameters followed by recomputations, taking too long. To avoud the computational overhead, we have created a model of the black hole image composed of simple geometric forms that allowed analytical Fourier transforms into the visibility domain. The model got the name ``\verb|xringaus|": its elements were two ``slashed", nested cylindrical surfaces forming a ring in projection, and a Gaussian. Varying the geometry and intensities of the forms, the model was supposed to take approximate images of many of the black hole states. This gave a chance to measure some of the real black hole parameters. Finding the model whose brightness image is the closest to the one of the real black hole required fitting the model in visibility domain to the observation data. This was a problem on finding the parameters $\bfp=(p_1,p_2,...,p_{N_p})$ of the visibility model $x^{\rm mod}(\bfp,u_i,v_i)$ that would give the absolute (or global) minimum to the $\chi^2$ calculated as
 \begin{equation}
   \label{chi2}
   \chi^2(\bfp) = \sum_{i=1}^{N} \frac{(x^{\rm mod}(\bfp,u_i,v_i) - x_i^{\rm obs})^2}{\sigma_i^2},
 \end{equation}
-where $(u_i,v_i)$ were the coordinates of measured visibilities in the spatial frequency space, and the variance of every datum $\sigma_i^2$ played the role of its weight in the $\chi^2$ sum. The model had 9 parameters, so had $\chi^2$, and the problem was in finding the global minimum of the 9-dimensional hypersurface in the 10-dimensional space. The relief of this $\chi^2(\bfp)$ hypersurface was extremely complex, with innumerable creases and local minima, so the gradient methods appeared useless. 
+where $(u_i,v_i)$ were the coordinates of measured visibilities in the spatial frequency space, and the variance of every datum $\sigma_i^2$ played the role of its weight in the $\chi^2$ sum. The model had 9 parameters, so had $\chi^2$, and the problem was in finding the global minimum of the 9-dimensional hypersurface in the 10-dimensional space. The relief of this $\chi^2(\bfp)$ hypersurface was extremely complex, with innumerable creases and local minima, so the gradient methods appeared useless. Therefore, instead of finding the unique point $\bfp = \bfp_0$ at which $\chi^2(\bfp)$ reaches its global minimum we had to resort to building the statistical distribution of the parameter $\bfp$ probability density in hope that its maximum would be at $\bfp_0$. 
 
-We created a massively parallel and highly efficient, problem-specific optimization code based on the CUDA computing platform to be run on the NVIDIA graphic cards (GPU). The code would take just seconds to fit our model to the observations. Subsequent modifications turned the code to a universal tool capable of fast solving general non-linear optimization problems and even solving systems of non-linear equations. 
+We рфму created a massively parallel and highly efficient, problem-specific optimization code based on the CUDA computing platform to be run on the NVIDIA graphic cards (GPU). The code would take just seconds to fit our model to the observations. Subsequent modifications turned the code to a universal tool capable of fast solving general non-linear optimization problems and even solving systems of non-linear equations. 
 
 We briefly describe here the statistical method we used in our software, the Markov Chain Monte-Carlo (MCMC) with Replica Exchange. It is based on the idea of the Bayesian inference. 
 
@@ -95,23 +95,30 @@ where ``," reads ``and". Relationship \eqref{joint_ux} associates the probabilit
   \item[-] $P(\bfx|\bfp)$ the likelihood, and
   \item[-] $P(\bfp|\bfx)$ the inference or the posterior probability distribution.
 \end{itemize}
-In terms of causality, the object under observation is the cause, and the observation data is the effect. The Bayes' theorem allows us to rearrange the cause and the effect: using the known data $\bfx$, compute the \emph{posterior} probability distribution $P(\bfp|\bfx)$ that $\bfx$ is an effect of the object represented by our model with the parameter set $\bfp$. Thus, we pose a task to find not just a single set of the ``optimal" model parameters, but the probability distribution of this set over the parameter space \emph{given} the actual set of observation data. Of course, we are interested in such distributions for every single parameter, which are the marginal distributions of $P(\bfp|\bfx)$. Below is shown that MCMC allows direct rendering of these marginal distributions. 
+In terms of causality, the object under observation is the cause, and the observation data is the effect. The Bayes' theorem allows us to rearrange the cause and the effect: using the known data $\bfx$, compute the \emph{posterior} probability distribution $P(\bfp|\bfx)$ that $\bfx$ is an effect of the object represented by our model with the parameter set $\bfp$. 
+Dividing \eqref{joint_ux} by $P(\bfx)$ yields the Bayes' formula for distributions, similar to \eqref{bayes_rule}:
+\begin{equation}
+  \label{bayes_formula}
+  P(\bfp|\bfx) =  \frac{P(\bfx|\bfp)P(\bfp)}{P(\bfx)},
+\end{equation}
+
+We pose a task of finding not just a single set of the optimal model parameters, but the probability distribution of this set over the parameter space \emph{given} the actual set of observation data. Of course, we are interested in such distributions for every single parameter, which are the marginal distributions of $P(\bfp|\bfx)$. Below is shown that MCMC allows direct rendering of these marginal distributions. 
 
 So far, the Bayesian distributions have been treated in terms of the visibility model fitting to the observation data. However, nothing can prevent us from formulating any optimization problem using the Bayesian approach. Consider a problem of finding the optimal solution of an overdetermined system of non-linear equations ${\bf F}(\bfp) = \bfx$, where $N > N_p$, ${\bf F} = [f_1, f_2, ... f_N]^{\uT}$, $\bfp = [p_1, p_2, ... p_{N_p}]^{\uT}$, and $\bfx = [x_1, x_2, ... x_N]^{\uT}$. The equations in the system are $f_i(\bfp) = x_i$, $i = \overline{1,\;N}$. Generally, the system has no roots. However, the problem can be set to find the optimal parameters $\bfp$ that provide the minimum discrepancy between the left- and the right hand sides. This is the well-known problem of least-squares solution (LSS), and it is formulated as   
 \begin{equation}
-  \label{vector_optimization_problem}
+  \label{nonlin_sys_opt}
   \chi^2(\bfp) = \sum_{i=1}^{N} \frac{(f_i(\bfp) - x_i)^2}{\sigma_i^2}  \rightarrow {\min\limits_{\bfp}},
 \end{equation}
 Here the ``data" $\bfx$ can be just a vector of zeros, $\bfx~\equiv~{\bf 0}$. Moreover, the same MCMC procedure can find \emph{all} the roots $\bfp_k$ of a non-linear system of simultaneous equations ${\bf F}(\bfp) = {\bf 0}$, if it is consistent and the size of vector $\bfp$ equals the number of equations $N$:
 \begin{equation}
-  \label{vector_optimization_problem}
+  \label{vec_fun_opt}
   \chi^2(\bfp) = \sum_{i=1}^{N} \frac{f_i^2(\bfp)}{\sigma_i^2}  \rightarrow {\min\limits_{\bfp}}.
 \end{equation}
 The roots will sit at the locations $k$ where $\chi(\bfp_k)$ is close to zero.
 
 The problem of minimization of a single function of several variables $x = f(\bfp)$ is quite trivial:
 \begin{equation}
-  \label{optimization_problem}
+  \label{single_fun_opt}
   \chi^2(\bfp) =  \frac{f^2(\bfp)}{\sigma^2} \rightarrow {\min\limits_{\bfp}}.
 \end{equation}
 Here the ``data" $x$ is just a zero. The $\chi^2$ is simply $f^2/\sigma^2$. In problems like the mentioned above, all the variances $\sigma_i^2$ can be set to the same nonzero value, for example, to unity. The Bayesian inference is obviously applicable to this class of problems.
@@ -127,13 +134,7 @@ The prior, $P(\bfp)$, is the distribution over the parameter space that represen
 %, or sometimes algebraic inequalities relating several parameters.
 The prior may not be very informative (for example, a uniform value within the allowed interval and zero outside), but it must always be provided.  
 
-
-Dividing \eqref{joint_ux} by $P(\bfx)$ yields the Bayes' formula:
-\begin{equation}
-  \label{bayes_formula}
-  P(\bfp|\bfx) =  \frac{P(\bfx|\bfp)P(\bfp)}{P(\bfx)},
-\end{equation}
-with the searched for posterior parameter distribution on the left hand side, and computable probabilities on the right hand side. The value of $P(\bfx)$, the probability density of the given observation data sample, can be calculated using the total probability law,
+The searched for posterior parameter distribution is on the left hand side of the Bayes formula \eqref{bayes_formula}, and the computable probabilities are on the right hand side. The value of $P(\bfx)$, the probability density of the given observation data sample, can be calculated using the total probability law,
 \begin{equation}
   P(\bfx) = \int P(\bfx|\bfp)P(\bfp) \ud \bfp.
 \end{equation}
