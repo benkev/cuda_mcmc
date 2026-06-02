@@ -16,6 +16,8 @@
 \newcommand{\bfr}{\,\mathbf{r}}
 \newcommand{\bfk}{\,\mathbf{k}}
 \newcommand{\bfp}{\,\mathbf{p}}
+\newcommand{\bfxi}{\,\mathbf{\xi}}
+\newcommand{\bfth}{\,\mathbf{\theta}}
 \newcommand{\bfx}{\,\mathbf{x}}
 \newcommand{\bfy}{\,\mathbf{y}}
 \newcommand{\hstp}{\,{\frac{\ud s}{2}}}
@@ -50,6 +52,7 @@ This document describes the software \verb|cuda_mcmc| designed to greatly accele
 
 
 \section{Introduction and Motivation}\label{intro}
+
 
 In the problems on finding global extrema of non-linear functions, the gradient methods of optimization are powerless before multimodal functions, non-continuous functions, or functions some (or all) of whose arguments can only take discrete or integer values. Statistical methods can be more helpful for this class of problems. 
 
@@ -102,6 +105,8 @@ Dividing \eqref{joint_ux} by $P(\bfx)$ yields the Bayes' formula for distributio
   P(\bfp|\bfx) =  \frac{P(\bfx|\bfp)P(\bfp)}{P(\bfx)},
 \end{equation}
 
+The searched for posterior parameter distribution, $P(\bfp|\bfx)$, is on the left hand side of the Bayes formula \eqref{bayes_formula}, and the computable probabilities are on the right hand side. 
+
 We pose a task of finding not just a single set of the optimal model parameters, but the probability distribution of this set over the parameter space \emph{given} the actual set of observation data. Of course, we are interested in such distributions for every single parameter, which are the marginal distributions of $P(\bfp|\bfx)$. Below is shown that MCMC allows direct rendering of these marginal distributions. 
 
 So far, the Bayesian distributions have been treated in terms of the visibility model fitting to the observation data. However, nothing can prevent us from formulating any optimization problem using the Bayesian approach. Consider a problem of finding the optimal solution of an overdetermined system of non-linear equations ${\bf F}(\bfp) = \bfx$, where $N > N_p$, ${\bf F} = [f_1, f_2, ... f_N]^{\uT}$, $\bfp = [p_1, p_2, ... p_{N_p}]^{\uT}$, and $\bfx = [x_1, x_2, ... x_N]^{\uT}$. The equations in the system are $f_i(\bfp) = x_i$, $i = \overline{1,\;N}$. Generally, the system has no roots. However, the problem can be set to find the optimal parameters $\bfp$ that provide the minimum discrepancy between the left- and the right hand sides. This is the well-known problem of least-squares solution (LSS), and it is formulated as   
@@ -121,24 +126,26 @@ The problem of minimization of a single function of several variables $x = f(\bf
   \label{single_fun_opt}
   \chi^2(\bfp) =  \frac{f^2(\bfp)}{\sigma^2} \rightarrow {\min\limits_{\bfp}}.
 \end{equation}
-Here the ``data" $x$ is just a zero. The $\chi^2$ is simply $f^2/\sigma^2$. In problems like the mentioned above, all the variances $\sigma_i^2$ can be set to the same nonzero value, for example, to unity. The Bayesian inference is obviously applicable to this class of problems.
+Here the ``data" $x$ is just a zero. The $\chi^2$ is simply $f^2/\sigma^2$. In problems like the mentioned above, all the variances $\sigma_i^2$ can be set to the same nonzero value, for example, to unity. The Bayesian inference is obviously applicable to this class of problems, too.
 
 
-The likelihood $P(\bfx|\bfp)$ may be any positive function that reaches its maximum when the difference between the actual data and the model data becomes zero. We use a Gaussian likelihood
+The likelihood, $P(\bfx|\bfp)$, may be any positive function that reaches its maximum when the difference between the actual data and the model data becomes zero. We use a Gaussian likelihood
 \begin{equation}
   \label{gaussian_likelihood}
   P(\bfx|\bfp) = \left(\prod_i \frac{1}{\sqrt{2 \pi} \sigma_i} \right) e^{-\frac{1}{2}\chi^2},
 \end{equation}
 where $\chi^2$ and $\sigma$ are from Eq.~\eqref{chi2}.
+
+
 The prior, $P(\bfp)$, is the distribution over the parameter space that represents our preliminary knowledge about the intervals where the parameter values could be present.
 %, or sometimes algebraic inequalities relating several parameters.
 The prior may not be very informative (for example, a uniform value within the allowed interval and zero outside), but it must always be provided.  
 
-The searched for posterior parameter distribution is on the left hand side of the Bayes formula \eqref{bayes_formula}, and the computable probabilities are on the right hand side. The value of $P(\bfx)$, the probability density of the given observation data sample, can be calculated using the total probability law,
+The evidence, $P(\bfx)$, which is the probability density of the given observation data sample, can be calculated using the total probability law,
 \begin{equation}
   P(\bfx) = \int P(\bfx|\bfp)P(\bfp) \ud \bfp.
 \end{equation}
-For a given prior and a model the evidence $P(\bfx)$ is always a single constant value as long as we work with the same data set: the integration over the whole parameter space removes all the variables. The evidence value can be used to compare the quality of different models. A ``better" model will have larger $P(\bfx)$. The Bayes' theorem thus takes the form
+For a given prior and a model, the evidence $P(\bfx)$ is always a single constant value as long as we work with the same data set: the integration over the whole parameter space removes all the variables. The evidence value can be used to compare the quality of different models. A ``better" model will have larger $P(\bfx)$. The Bayes' theorem thus takes the form
 \begin{equation}
   \label{post_distr_int}
   P(\bfp|\bfx) =  \frac{P(\bfx|\bfp)P(\bfp)}{\int P(\bfx|\bfp)P(\bfp) \ud \bfp}.
@@ -153,7 +160,7 @@ The posterior distributions, $P(p_i|\bfx)$, are not required to be normalized, s
   \label{bayes_propor}
   F(\bfp|\bfx) \propto P(\bfx|\bfp)P(\bfp),
 \end{equation}
-where $F(\bfp|\bfx) \propto P(\bfp|\bfx)$. Normalization of the $F$ function would produce the posterior distribution $P(\bfp|\bfx)$ and its marginals $P(p_i|\bfx)$. However, statistical parameters of $P(p_i|\bfx)$ -- the means and the standard deviations, or qualitative conclusions about their forms -- can be found directly from $F(p_i|\bfx)$ without the normalization. The Metropolis-Hastings algorithm described here utilizes this fact. It draws many samples from the $P(p_i|\bfx)$ distributions, and the result of optimization, $\bfp$, is obtained from the histograms built using the saved samples. 
+where $F(\bfp|\bfx) \propto P(\bfp|\bfx)$. Normalization of the $F$ function would produce the posterior distribution $P(\bfp|\bfx)$ and its marginals $P(p_i|\bfx)$. However, statistical parameters of $P(p_i|\bfx)$ -- the means and the standard deviations, or qualitative conclusions about their forms -- can be found directly from $F(p_i|\bfx)$ without the normalization. The Metropolis-Hastings algorithm described here utilizes this fact. It draws many samples from the $P(p_i|\bfx)$ distributions, and the result of optimization, the vector of model parameters $\bfp$, is obtained from the histograms built using the saved samples. 
 
 
 
