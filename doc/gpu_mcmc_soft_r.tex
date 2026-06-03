@@ -107,7 +107,7 @@ The searched for posterior parameter distribution, $P(\bfr|\bfx)$, is on the lef
 
 We pose a task of finding not just a single set of the optimal model parameters, but the probability distribution of this set over the parameter space \emph{given} the actual set of observation data. Of course, we are interested in such distributions for every single parameter, which are the marginal distributions of $P(\bfr|\bfx)$. Below is shown that MCMC allows direct rendering of these marginal distributions. 
 
-So far, the Bayesian distributions have been treated in terms of the visibility model fitting to the observation data. However, nothing can prevent us from formulating any optimization problem using the Bayesian approach. Consider a problem of finding the optimal solution of an overdetermined system of non-linear equations ${\bf F}(\bfr) = \bfx$, where $N > N_r$, ${\bf F} = [f_1, f_2, ... f_N]^{\uT}$, $\bfr = [r_1, r_2, ... r_{N_r}]^{\uT}$, and $\bfx = [x_1, x_2, ... x_N]^{\uT}$. The equations in the system are $f_i(\bfr) = x_i$, $i = \overline{1,\;N}$. Generally, the system has no roots. However, the problem can be set to find the optimal parameters $\bfr$ that provide the minimum discrepancy between the left- and the right hand sides. This is the well-known problem of least-squares solution (LSS), and it is formulated as   
+So far, the Bayesian distributions have been treated in terms of the visibility model fitting to the observation data. However, nothing can prevent us from formulating any optimization problem using the Bayesian approach. Consider a problem of finding the optimal solution of an overdetermined system of non-linear equations ${\bf F}(\bfr) = \bfx$, where $N > N_r$, ${\bf F} = [f_1, f_2, ... f_N]^{\uT}$, $\bfr = [r_1, r_2, ... r_{N_r}]^{\uT}$, and $\bfx = [x_1, x_2, ... x_N]^{\uT}$. The equations in the system are $f_i(\bfr) = x_i$, $i = \overline{1,\;N}$. Generally, the system has no roots. However, the problem can be set to find the optimal parameters $\bfr$ that provide the minimum discrepancy between the left- and the right hand sides. This is the well-known problem of least-squares solution (LSS), formulated as   
 \begin{equation}
   \label{nonlin_sys_opt}
   \chi^2(\bfr) = \sum_{i=1}^{N} \frac{(f_i(\bfr) - x_i)^2}{\sigma_i^2}  \rightarrow {\min\limits_{\bfr}},
@@ -148,17 +148,17 @@ For a given prior and a model, the evidence $P(\bfx)$ is always a single constan
   \label{post_distr_int}
   P(\bfr|\bfx) =  \frac{P(\bfx|\bfr)P(\bfr)}{\int P(\bfx|\bfr)P(\bfr) \ud \bfr}.
 \end{equation}
-As we already said, the posterior distribution of all the parameters, $P(\bfr|\bfx)$, is not as interesting as that of an individual parameter, $P(r_i|\bfx)$, $r_i \in \bfr$, because it can provide the information on the mean value (or values, if multi-modal) and uncertainty of the estimate of the parameter $r_i$. Such individual distributions for every parameter $r_i$ are, in effect, the marginal distributions, i.e. the results of integration of the total distribution $P(\bfr|\bfx)$ over the parameter subspace spanned by all the parameters but $r_i$:
+As we already said, the posterior distribution of all the parameters, $P(\bfr|\bfx)$, is not as interesting as those of individual parameters, $P(r_i|\bfx)$, $r_i \in \bfr$, because each one can provide information on the mean value (or values, if multi-modal) and uncertainty of the estimate of the parameter $r_i$. Such individual distributions for every parameter $r_i$ are, in effect, the marginal distributions, i.e. the results of integration of the total distribution $P(\bfr|\bfx)$ over the parameter subspace spanned by all the parameters but $r_i$:
 \begin{equation}
   \label{param_post_distr}
   P(r_i|\bfx) =  \int P(\bfr|\bfx)\ud r_1 \ud r_2 ... \ud r_{i-1} \ud r_{i+1} ... \ud r_N.
 \end{equation}
-The posterior distributions, $P(r_i|\bfx)$, are not required to be normalized, so the strict equations~\eqref{bayes_formula} or~\eqref{post_distr_int} can be relaxed to a mere proportionality
+The posterior distributions, $P(r_i|\bfx)$, are not required to be normalized, so in the strict equations~\eqref{bayes_formula} or~\eqref{post_distr_int} computation of the evidence, $P(\bfx)$, and division by it can be omitted to yield the function $F(\bfr|\bfx) \propto P(\bfr|\bfx)$, or 
 \begin{equation}
   \label{bayes_propor}
-  F(\bfr|\bfx) \propto P(\bfx|\bfr)P(\bfr),
+  F(\bfr|\bfx) \propto P(\bfx|\bfr)P(\bfr).
 \end{equation}
-where $F(\bfr|\bfx) \propto P(\bfr|\bfx)$. Normalization of the $F$ function would produce the posterior distribution $P(\bfr|\bfx)$ and its marginals $P(r_i|\bfx)$. However, statistical parameters of $P(r_i|\bfx)$ -- the means and the standard deviations, or qualitative conclusions about their forms -- can be found directly from $F(r_i|\bfx)$ without the normalization. The Metropolis-Hastings algorithm described here utilizes this fact. It draws many samples from the $P(r_i|\bfx)$ distributions, and the result of optimization, the vector of model parameters $\bfr$, is obtained from the histograms built using the saved samples. 
+Normalization of the $F$ function would produce the posterior distribution $P(\bfr|\bfx)$ and its marginals $P(r_i|\bfx)$. However, statistical parameters of $P(r_i|\bfx)$ -- the means and the standard deviations, or qualitative conclusions about their forms -- can be found directly from $F(r_i|\bfx)$ without the normalization. The Metropolis-Hastings algorithm described here utilizes this fact. It draws many samples from the $P(r_i|\bfx)$ distributions, and the result of optimization, the vector of model parameters $\bfr$, is obtained from the histograms built using the saved samples. 
 
 
 
@@ -215,7 +215,7 @@ The efficiency of this algorithm is also sensitive to the step size of proposal 
 
 The described Metropolis-Hastings MCMC algorithm is quite suitable for our problems where the direct sampling is complicated or impossible. However, the original Metropolis-Hastings MCMC algorithm can fail to fully explore the target probability distribution, especially if the distribution is multi-modal with widely separated peaks. The algorithm can get trapped in a local mode and miss other regions of parameter space that contain significant probability. 
 
-The replica-exchange MCMC algorithm (also known as parallel tempering) is a result of improvement of the MCMC algorithm targeted to such complex multi-modal distributions. The replica-exchange algorithm belongs to the class of ``generalized-ensemble algorithms". It has been developed mostly in the past decade and recently was applied to some astronomical problems \citep{Gregory2005,Varghese_etal2011,Benneke_Seager2012}. In this method a parameter $\beta$ called ``temperature" is introduced as
+The replica-exchange MCMC algorithm (also known as parallel tempering) is a result of improvement of the MCMC algorithm targeted to such complex multi-modal distributions. The replica-exchange algorithm belongs to the class of ``generalized-ensemble algorithms". It has been developed mostly in the first decade of 2000s and recently was applied to some astronomical problems \citep{Gregory2005,Varghese_etal2011,Benneke_Seager2012}. In this method a parameter $\beta$ called ``inverse temperature" is introduced as
 \begin{eqnarray}
   \label{post_distr_beta}
   P_\beta(\bfr|\bfx) &=&  \frac{P(\bfx|\bfr)^\beta P(\bfr)}{\int P(\bfx|\bfr)^\beta P(\bfr) \ud \bfr} \nonumber \\
@@ -223,9 +223,14 @@ The replica-exchange MCMC algorithm (also known as parallel tempering) is a resu
 \end{eqnarray}
 When $\beta=1$, it becomes the target posterior distribution. For the Gaussian likelihood \eqref{gaussian_likelihood} the latter can be rendered as
 \begin{equation}
-      P(\bfr|\bfx;\beta) \propto \exp \left( \beta L(\bfx|\bfr) \right) P(\bfr),
+      P_\beta(\bfr|\bfx) \propto \exp \left( \beta L(\bfx|\bfr) \right) P(\bfr),
 \end{equation}
-where $L(\bfx|\bfr)$ is a log-likelihood. The term ``temperature" is borrowed from the canonical distribution $\exp \left( -\beta E \right)$ in statistical mechanics, where the absolute temperature is expressed using the ``thermodynamic $\beta$" written as 
+where $L(\bfx|\bfr)$ is a log-likelihood:
+\begin{equation}
+  L(\bfx|\bfr) = \ln P(\bfx|\bfr) = -\frac{1}{2}\chi^2(\bfr) + \mathrm{const}
+\end{equation}
+
+The term ``temperature" is borrowed from the canonical distribution $\exp \left( -E/{kT} \right) = \exp \left( -\beta E \right)$ in statistical mechanics, where the absolute temperature is expressed using the ``thermodynamic $\beta$" written as 
 \begin{equation}
 	\beta = \frac{1}{kT},
 \end{equation}
@@ -241,16 +246,15 @@ Thus, the Metropolis-Hastings sampling at higher temperatures enables exploratio
 In the replica exchange MCMC algorithm, multiple Markov chains with different temperatures $(\beta_1,\beta_2, ... \beta_{N_\beta})$ including a chain with the lowest temperature $\beta=1$ and different initial conditions are generated in parallel. The specific values of $\beta_l$ usually span several orders of magnitude with logarithmic steps. As an example, 40 Markov chains may have $10^{-4} \leqslant \beta_l \leqslant 1$ with $l \in \overline{1\,..\,40}$. At each MCMC iteration, when the generation of new sets of parameters $\bfr_{i,l}$ is finished in all the chains, the newly generated elements of adjacent chains at the temperatures $\beta_l$ and $\beta_{l+1}$ are exchanged with a probability $\alpha$ written as
 \begin{equation}
   \label{exchange_probab}
-  \alpha =  \min \left( \frac{P(\bfr_{i,l+1}|\bfx; \beta_{l+1})} 
-            {P(\bfr_{i,l}|\bfx; \beta_{l})}, 1 \right) .
+  \alpha =  \min \left( \frac{P_{\beta_{l+1}}(\bfr_{i,l+1}|\bfx)} 
+            {P_{\beta_{l}}(\bfr_{i,l}|\bfx)}, 1 \right) .
 \end{equation}
 The exchange procedure is repeated for $N_\beta - 1$ times, after which a new parameter $\bfr_{i+1}$ generation begins. Under the Gaussian  likelihood \eqref{gaussian_likelihood} and the Gaussian proposal distribution \eqref{gaussian_prop_distr} it becomes
 \begin{eqnarray}
   \label{accept_probab_beta2}
   \alpha &=& \min \biggl( \exp \biggl\lbrace -\frac{1}{2}(\beta_{l+1} - \beta_{l}) \nonumber \\
          &&\times  \Bigl( \chi^2(\bfx;\bfr_{i,l}) -
-                 \chi^2(\bfx;\bfr_{i,l+1}) \Bigr) \biggr\rbrace  \nonumber \\
-         &&\times \frac{P(\bfr')}{P(\bfr_i)}, 1 \biggr)      .
+                 \chi^2(\bfx;\bfr_{i,l+1}) \Bigr) \biggr\rbrace, 1 \biggr)      .
 \end{eqnarray}
 In the higher temperature distributions $(\beta \ll 1)$, radically new configurations are explored, while lower temperature distributions  $(\beta \approx 1)$ allow for detailed exploration of new configurations and local modes. The final inference on the model parameters is based on samples drawn from the target probability distribution $(\beta=1)$ only.
 
