@@ -249,7 +249,7 @@ In the replica exchange MCMC algorithm, multiple Markov chains with different te
   \alpha =  \min \left( \frac{P_{\beta_{l+1}}(\bfr_{i,l+1}|\bfx)} 
             {P_{\beta_{l}}(\bfr_{i,l}|\bfx)}, 1 \right) .
 \end{equation}
-The exchange procedure is repeated for $N_\beta - 1$ times, after which a new parameter $\bfr_{i+1}$ generation begins. Under the Gaussian  likelihood \eqref{gaussian_likelihood} and the Gaussian proposal distribution \eqref{gaussian_prop_distr} it becomes
+The exchange procedure is repeated for $N_\beta - 1$ times, after which a new parameter generation begins. Under the Gaussian  likelihood \eqref{gaussian_likelihood} and the Gaussian proposal distribution \eqref{gaussian_prop_distr} it becomes
 \begin{eqnarray}
   \label{accept_probab_beta2}
   \alpha &=& \min \biggl( \exp \biggl\lbrace -\frac{1}{2}(\beta_{l+1} - \beta_{l}) \nonumber \\
