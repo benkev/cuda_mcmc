@@ -54,13 +54,6 @@ This document describes the software \verb|cuda_mcmc| designed to greatly accele
 \section{Introduction and Motivation}\label{intro}
 
 
-$\bfth, \theta, \bm{\theta}, \boldsymbol{\theta}$
-
-$\bm{\mathrm{\theta}}$
-
-
-$\bm{\uptheta}, \uptheta$
-
 In the problems on finding global extrema of non-linear functions, the gradient methods of optimization are powerless before multimodal functions, non-continuous functions, or functions some (or all) of whose arguments can only take discrete or integer values. Statistical methods can be more helpful for this class of problems. 
 
 The method described in this paper initially was used in a radio astronomy problem of a black hole event horizon imaging \citep{BenkevBHM}. The sparse (and scarce) observation data from the VLBI radio array pointing at the Sagittarius A* (Sgr A*) object, the super massive black hole at the center of our Galaxy, did not allow using traditional imaging tools. Some existing models could give approximate notion of the black hole look, but they took hours of heavy computations and were difficult to fit to real observation data. The fitting requires multiple variations of the model parameters followed by recomputations, taking too long. To avoud the computational overhead, we have created a model of the black hole image composed of simple geometric forms that allowed analytical Fourier transforms into the visibility domain. The model got the name ``\verb|xringaus|": its elements were two ``slashed", nested cylindrical surfaces forming a ring in projection, and a Gaussian. Varying the geometry and intensities of the forms, the model was supposed to take approximate images of many of the black hole states. This gave a chance to measure some of the real black hole parameters. Finding the model whose brightness image is the closest to the one of the real black hole required fitting the model in visibility domain to the observation data. This was a problem on finding the parameters $\bfr=(r_1,r_2,...,r_{N_r})$ of the visibility model $x^{\rm mod}(\bfr,u_i,v_i)$ that would give the absolute (or global) minimum to the $\chi^2$ calculated as

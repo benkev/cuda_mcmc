@@ -16,3 +16,12 @@ $ source ~/.bashrc
 Or simply open a new console window.
 
 
+In ./doc/ directory:
+gpu_mcmc_soft_r.*        vector of parameters is 'r'
+gpu_mcmc_soft_th.*       vector of parameters is '\theta'
+gpu_mcmc_soft.*          vector of parameters is 'p'
+
+gpu_mcmc_soft_r.tex    is being worked on. Others are abandoned (so far).
+
+
+
