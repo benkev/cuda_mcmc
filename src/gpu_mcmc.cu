@@ -690,7 +690,8 @@ void run_mcmc(CMcmcFit *mc_h, CMcmcFit *mc_d) {
   int burn; /* Flag 1: 'burn-in stage'; 0: 'main stage' */
   /* Pass 0: model() calculates amplitudes and phases; 
    * Pass 1: model() calculates closures from precalculated phases */
-  int ipass = 0; 
+  int ipass = 0;
+  int nptot = mc_h->nptot;
 
 
   /* Loop parameters: */
@@ -699,13 +700,13 @@ void run_mcmc(CMcmcFit *mc_h, CMcmcFit *mc_d) {
 
   printf("HOST imodel = %d\n", mc_h->imodel);
     printf("HOST pmint:\n");
-    for (t = 0; t < 9; t++) printf("%g  ", mc_h->pmint_h[t]);
+    for (t = 0; t < nptot; t++) printf("%g  ", mc_h->pmint_h[t]);
     printf("\n");
     printf("HOST pmaxt:\n");
-    for (t = 0; t < 9; t++) printf("%g  ", mc_h->pmaxt_h[t]);
+    for (t = 0; t < nptot; t++) printf("%g  ", mc_h->pmaxt_h[t]);
     printf("\n");
     printf("HOST ptotal:\n");
-    for (t = 0; t < 9; t++) printf("%g  ", mc_h->ptotal_h[t]);
+    for (t = 0; t < nptot; t++) printf("%g  ", mc_h->ptotal_h[t]);
     printf("\n");
 
   /*
