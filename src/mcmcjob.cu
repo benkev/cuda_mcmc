@@ -686,6 +686,9 @@ CMcmcFit::CMcmcFit(int imodel,
   /*
    * Allocate the arrays on the GPU
    */
+
+  printf("s_rndst = %d\n", s_rndst);
+  
   CUDA_CALL(cudaMalloc((void **) &this->rndst, s_rndst));
 
   CUDA_CALL(cudaMalloc((void **) &this->coor, s_coor));
