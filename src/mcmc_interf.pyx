@@ -207,6 +207,9 @@ cimport numpy as np
 cdef extern from "cuda_runtime_api.h":
     void cudaDeviceReset()
 
+cdef extern from "cuda_runtime_api.h":
+    int cudaSetDevice(int devNum)
+
 # cdef extern from "mcmcjob.cuh":
 #     pass
 
@@ -284,10 +287,10 @@ cpdef mcmcuda(
 
 cdef extern from "mcmc.h":
     void calc_modchi2(float *coor, float *dat, float *std2r,
-	       int *icoor, int *idat, float *datm, float *chi2m,    
-	       float *pcur, float *chi2c, int *flag, int imodel,
-	       int ncoor, int ndat, int nicoor, int nidat, int ndatm,
-	       int nptot, int nbeta, int nseq)
+           int *icoor, int *idat, float *datm, float *chi2m,    
+           float *pcur, float *chi2c, int *flag, int imodel,
+           int ncoor, int ndat, int nicoor, int nidat, int ndatm,
+           int nptot, int nbeta, int nseq)
 
 
 
@@ -339,7 +342,11 @@ cpdef calcmodel(
 
 
 # cudaDeviceReset();
+
 cpdef reset_gpu():
     cudaDeviceReset()
+
+cpdef int set_gpu(int devNum):
+    return cudaSetDevice(devNum)
 
 
