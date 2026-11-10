@@ -151,7 +151,7 @@ class CMcmcFit: public CCalcModel {
   int s_chi2;   /* = sizeof(float)*nseq*niter; */
   int s_beta;   /* = sizeof(float)*nbeta; */
   int s_acpt;   /* = sizeof(int)*nprm*nbeta*nseq; */
-  int s_hist;   /* = sizeof(float)*nadj*nprm*nbeta*nseq; */
+  int s_hist;   /* = sizeof(int)*nadj*nprm*nbeta*nseq; */
   //int s_bsflt;  /* = sizeof(float)*nbeta*nseq; */
   /* int s_bsint;  /\* = sizeof(int)*nbeta*nseq; *\/ */
   int s_bsptot; /* = sizeof(float)*nbeta*nseq*nptot; */

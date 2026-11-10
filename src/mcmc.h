@@ -24,7 +24,8 @@ void mcmc_cuda(float *coor, float *dat, float *std2r,
 	       int *icoor, int *idat, float *datm, float *chi2m,    
 	       float *pcur, float *chi2c, int *flag, int imodel,
 	       int ncoor, int ndat, int nicoor, int nidat, int ndatm,
-	       int nprm, int nbeta, int nseq);
+	       int nptot, int nbeta, int nseq);
+    /*	   int nprm, int nbeta, int nseq); -- must be nptot, NOT nprm! */
 
 
 void calc_model(float *coor, int *idat, float *datm, float *pcur, 

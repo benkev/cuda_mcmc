@@ -303,15 +303,7 @@ __global__ void calc_chi2_terms(CCalcModel *mc, int ipass) {
    * Calculate one term of the chi^2 sum
    */
   dif = mc->dat[idat] - mc->datm[idatm];
-
-
-  //if (ist == 0) {
-  // printf("DEVICE idat=%d, idatm=%d, dat[idat]=%f, datm[idatm]=%f, dif=%f\n",
-  //        idat, idatm, mc->dat[idat], mc->datm[idatm], dif);
-  //}
-
-
-  
+ 
   if (iret == 2) { /* I.e. dif is closure phase difference */
     dif = atan2(sin(dif), cos(dif));
     // /* In case they are close to +-pi: */
