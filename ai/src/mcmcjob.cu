@@ -582,4 +582,48 @@ CMcmcFit::~CMcmcFit() {
   CUDA_CALL(cudaMemcpy(this->n_cnt_h, this->n_cnt, s_acpt, DtoH));
   CUDA_CALL(cudaMemcpy(this->n_exch_h, this->n_exch, s_bsint, DtoH));
   CUDA_CALL(cudaMemcpy(this->n_hist_h, this->n_hist, s_hist, DtoH));
-  CUDA_C
+  CUDA_CALL(cudaMemcpy(this->beta_h, this->beta, s_beta, DtoH));
+  CUDA_CALL(cudaMemcpy(this->pstp_h, this->pstp, s_acpt, DtoH));
+  CUDA_CALL(cudaMemcpy(this->ptent_h, this->ptent, s_bsflt, DtoH));
+  CUDA_CALL(cudaMemcpy(this->ptentn_h, this->ptentn, s_bsint, DtoH));
+
+  CUDA_CALL(cudaFree(this->rndst));
+
+  CUDA_CALL(cudaFree(this->pdescr));
+  CUDA_CALL(cudaFree(this->ivar));
+  CUDA_CALL(cudaFree(this->invar));
+  CUDA_CALL(cudaFree(this->ptotal));
+  CUDA_CALL(cudaFree(this->pmint));
+  CUDA_CALL(cudaFree(this->pmaxt));
+
+  CUDA_CALL(cudaFree(this->pout));
+  CUDA_CALL(cudaFree(this->tout));
+  CUDA_CALL(cudaFree(this->chi2));
+
+  CUDA_CALL(cudaFree(this->tcur));
+  CUDA_CALL(cudaFree(this->n_acpt));
+  CUDA_CALL(cudaFree(this->n_cnt));
+  CUDA_CALL(cudaFree(this->n_exch));
+  CUDA_CALL(cudaFree(this->n_hist));
+  CUDA_CALL(cudaFree(this->beta));
+  CUDA_CALL(cudaFree(this->pstp));
+  CUDA_CALL(cudaFree(this->ptent));
+  CUDA_CALL(cudaFree(this->ptentn));
+
+}
+
+
+void CMcmcFit::do_mcmc_on_gpu() {
+  CMcmcFit *dev_mcmc;
+
+  CUDA_CALL(cudaMalloc((void **) &dev_mcmc, sizeof(CMcmcFit)));
+  CUDA_CALL(cudaMemcpy(dev_mcmc, this, sizeof(CMcmcFit), HtoD));
+
+  run_mcmc(this, dev_mcmc);
+
+  printf("sizeof(CMcmcFit) = %lu B\n", (unsigned long)sizeof(CMcmcFit));
+
+  CUDA_CALL(cudaMemcpy(this, dev_mcmc, sizeof(CMcmcFit), DtoH));
+  CUDA_CALL(cudaFree(dev_mcmc));
+
+}
