@@ -76,7 +76,12 @@ void calc_model(mcmc_real *coor, mcmc_int *idat, mcmc_real *datm,
                 int imodel, int ncoor, int ndat, int nidat,
                 int ndatm, int nptot, int nbeta, int nseq) {
 
-  /* Dummy arrays, not used in just model calculation */
+  /*
+   * Arrays below are not used by calc_model() itself, but the CCalcModel
+   * constructor requires them (it is shared with calc_modchi2() and
+   * mcmc_cuda()). We allocate minimal buffers just to satisfy the
+   * constructor; they are never read or written meaningfully.
+   */
   mcmc_real *dat = new mcmc_real [ndat];
   mcmc_real *std2r = new mcmc_real [ndat];
   mcmc_real *chi2m = new mcmc_real [nbeta*nseq*ndat];
