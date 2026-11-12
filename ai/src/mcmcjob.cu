@@ -82,13 +82,13 @@ void calc_model(mcmc_real *coor, mcmc_int *idat, mcmc_real *datm,
    * mcmc_cuda()). We allocate minimal buffers just to satisfy the
    * constructor; they are never read or written meaningfully.
    */
-  mcmc_real *dat = new mcmc_real [ndat];
-  mcmc_real *std2r = new mcmc_real [ndat];
-  mcmc_real *chi2m = new mcmc_real [nbeta*nseq*ndat];
-  mcmc_real *chi2c = new mcmc_real [nbeta*nseq];
+  mcmc_real *dat = new mcmc_real [ndat]();
+  mcmc_real *std2r = new mcmc_real [ndat]();
+  mcmc_real *chi2m = new mcmc_real [nbeta*nseq*ndat]();
+  mcmc_real *chi2c = new mcmc_real [nbeta*nseq]();
   int nicoor = 1;
-  mcmc_int *icoor = new mcmc_int [nicoor];
-  mcmc_int *flag = new mcmc_int [nbeta*nseq];
+  mcmc_int *icoor = new mcmc_int [nicoor]();
+  mcmc_int *flag = new mcmc_int [nbeta*nseq]();
 
   /*
    * Instantiate the CCalcModel class as modobj object:
