@@ -4,9 +4,14 @@
 // (BE CAREFUL not to mix with the names in src/gpu_mcmc.cu !!!
 // To avoid the mess, always undefine the names after use!):
 //
+#include "mcmc_types.h"
 
 #define X (mc->pcur[ipt])
 #define Y (mc->pcur[ipt+1])
+
+static constexpr mcmc_real c_one = (mcmc_real)1.0;
+static constexpr mcmc_real c_two = (mcmc_real)2.0;
+static constexpr mcmc_real c_100 = (mcmc_real)100.0;
 
 
 __device__ int model(CCalcModel *mc, int id, int ipt, int imd, int ipass) {
@@ -38,7 +43,8 @@ __device__ int model(CCalcModel *mc, int id, int ipt, int imd, int ipass) {
 
    
    if (id == 0) /* (1 - x)^2 + 100(y - x^2)^2 */
-       mc->datm[imd] = pow(1.f - X, 2) + 100.f*pow(Y - pow(X, 2), 2);
+       mc->datm[imd] =       pow(c_one - X, c_two) +
+                       c_100*pow(Y - pow(X, c_two), c_two);
    
        // mc->datm[imd] = pow(1.f - mc->pcur[ipt], 2) + 
        //     100.f*pow(mc->pcur[ipt+1] - pow(mc->pcur[ipt], 2), 2);

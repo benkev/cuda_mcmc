@@ -1,5 +1,5 @@
 #
-# search_Rosenbrok_api.py
+# search_Rosenbrock_api.py
 #
 # Using MCMC-RE on GPU finds the global minimum of the Rosenbrock function
 # (aka "Rosenbrock valley" or "Rosenbrock banana function").
@@ -10,6 +10,8 @@
 #
 # The function is defined by
 #    f(x,y)=(1 - x)^2 + 100(y - x^2)^2
+#
+# This is the low-level API example: it calls mcmc_interf.mcmcuda() directly.
 #
 
 import mcmc_interf as mi
@@ -28,6 +30,13 @@ from mpl_toolkits.mplot3d import Axes3D
 # mpl.rcParams['text.usetex'] = True
 # mpl.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}'] #if needed
 
+#
+# MCMC_REAL is float64 or float32 depending on how mcmc_interf was built.
+# It must match the .pyx (mcmc_interf_float.pyx / mcmc_interf_double.pyx)
+# and the C/CUDA side (mcmc_real in mcmc_types.h).
+#
+MCMC_REAL = np.float64 if mi.MCMC_DOUBLE_FLAG else np.float32
+
 nseq = int32(14)   # Number of processing cores (CUDA blocks)
 nbeta = int32(32)  # Number of temperatures
 niter = int32(1000)
@@ -38,10 +47,10 @@ seed = uint64(np.trunc(1e6*time.time()%(10*nstates)))
 imodel = 0
 
 pdescr = array((1,  1),  dtype=int32)
-ptotal = array((0., 0.), dtype=float32)
+ptotal = array((0., 0.), dtype=MCMC_REAL)
 nptot = len(ptotal)
-pmint = array((-5., -5.), dtype=float32)
-pmaxt = array((5., 5.),   dtype=float32)
+pmint = array((-5., -5.), dtype=MCMC_REAL)
+pmaxt = array((5., 5.),   dtype=MCMC_REAL)
 
 
 # ivar[nprm] maps prm[0:nprm] on ptotal[0:nptot] (not needed here )
@@ -61,68 +70,68 @@ for i in range(nptot):
         invar[i] = -1
 
 nadj = int32(100)
-beta1 = float32(1.)
-betan = float32(0.0001)   # ~exp(chi2/2)
+beta1 = MCMC_REAL(1.)
+betan = MCMC_REAL(0.0001)   # ~exp(chi2/2)
 
 npass = 1
 
-coor =  array((2, 2, 0.25, 0.5), dtype=float32); ncoor = len(coor)
+coor =  array((2, 2, 0.25, 0.5), dtype=MCMC_REAL); ncoor = len(coor)
 icoor = zeros(1,                 dtype=int32);   nicoor = len(coor)
-dat =   zeros(1, dtype=float32); ndat = len(dat) # Rosenbrock min value = 0
-std2r = ones_like(dat,           dtype=float32)
+dat =   zeros(1, dtype=MCMC_REAL); ndat = len(dat) # Rosenbrock min value = 0
+std2r = ones_like(dat,           dtype=MCMC_REAL)
 idat =  zeros(1,                 dtype=int32);   nidat = len(idat)
-datm =  zeros((nbeta*nseq*ndat), dtype=float32); ndatm = len(datm)
-chi2m = zeros((nbeta,nseq,ndat), dtype=float32)
-terms = zeros((nbeta,nseq,ndat), dtype=float32)
+datm =  zeros((nbeta*nseq*ndat), dtype=MCMC_REAL); ndatm = len(datm)
+chi2m = zeros((nbeta,nseq,ndat), dtype=MCMC_REAL)
+terms = zeros((nbeta,nseq,ndat), dtype=MCMC_REAL)
 rndst = zeros((nbeta,nseq,48),   dtype=uint8)
 
-beta = zeros((nbeta), dtype=float32)
-pstp = zeros((nprm,nbeta,nseq), dtype=float32)  # Adaptive step size
-pout = zeros((nprm,nbeta,nseq,niter), dtype=float32)
+beta = zeros((nbeta), dtype=MCMC_REAL)
+pstp = zeros((nprm,nbeta,nseq), dtype=MCMC_REAL)  # Adaptive step size
+pout = zeros((nprm,nbeta,nseq,niter), dtype=MCMC_REAL)
 tout = zeros((nbeta,nseq,niter), dtype=int32)
-chi2 = zeros((nseq,niter), dtype=float32)
-rate_acpt = zeros((nprm,nbeta), dtype=float32)
-rate_exch = zeros((nbeta), dtype=float32)
+chi2 = zeros((nseq,niter), dtype=MCMC_REAL)
+rate_acpt = zeros((nprm,nbeta), dtype=MCMC_REAL)
+rate_exch = zeros((nbeta), dtype=MCMC_REAL)
 flag = zeros((nbeta,nseq), dtype=int32)  
 tcur = zeros((nbeta,nseq), dtype=int32)  
-chi2c = zeros((nbeta,nseq), dtype=float32)  # old chi^2 array
+chi2c = zeros((nbeta,nseq), dtype=MCMC_REAL)  # old chi^2 array
 n_cnt =  zeros((nprm,nbeta,nseq), dtype=int32) # number of Metropolis trials
 n_acpt = zeros((nprm,nbeta,nseq), dtype=int32)
 n_exch = zeros((nbeta,nseq), dtype=int32)
 n_hist = zeros((nadj,nprm,nbeta,nseq), dtype=int32) # accept/reject history
 ptentn = zeros((nbeta,nseq), dtype=int32)   # Tentative parameter numbers
-ptent =  zeros((nbeta,nseq), dtype=float32) # Tentative parameters
-pcur = zeros((nbeta,nseq,nptot), dtype=float32) # Accepted param. set
+ptent =  zeros((nbeta,nseq), dtype=MCMC_REAL) # Tentative parameters
+pcur = zeros((nbeta,nseq,nptot), dtype=MCMC_REAL) # Accepted param. set
 
 # Fill in the working storage for threads calculating model visibilities
 for i in range(nbeta):
     for j in range(nseq):
         pcur[i,j,:] = ptotal
         for k in range(nprm):
-            pcur[i,j,ivar[k]] = pmin[k] + (pmax[k] - pmin[k])/2.
+            pcur[i,j,ivar[k]] = pmin[k] + (pmax[k] - pmin[k])/MCMC_REAL(2.)
 
 # Initialize parameter steps
-pmid = (pmax - pmin)/50.
+pmid = (pmax - pmin)/MCMC_REAL(50.)
 for i in range(nprm):
     pstp[i,:,:] = pmid[i]
 
 print('pstp[:,0,0] = ', pstp[:,0,0]) 
 
 # Initialize tcur
-n0_nbeta = arange(nbeta) # 0..nbeta-1
+n0_nbeta = arange(nbeta, dtype=int32) # 0..nbeta-1
 for iseq in range(nseq):
     tcur[:,iseq] = n0_nbeta
 
 # Initialize temperatures
 if nbeta == 1:
-    bstp = 1.0  # For debugging only
+    bstp = MCMC_REAL(1.0)  # For debugging only
 else:
-    bstp = (betan/beta1)**(1.0/float(nbeta-1))
+    bstp = (betan/beta1)**(MCMC_REAL(1.0)/MCMC_REAL(nbeta-1))
 for i in range(nbeta):
     beta[i] = beta1*bstp**i
 
 # Initialize counter
-n_cnt[:] = float32(1.)
+n_cnt[:] = np.int32(1)
 
 print('std2r = ', std2r, ', idat = ', idat, ', nidat = ', nidat)
 #sys.exit(0)

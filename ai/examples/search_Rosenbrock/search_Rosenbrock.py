@@ -14,6 +14,7 @@
 
 
 import imgpu
+from imgpu import MCMC_REAL
 import numpy as np
 import time
 import sys
@@ -33,13 +34,15 @@ from mpl_toolkits.mplot3d import Axes3D
 #
 # Only 5 arrays need to be specified:
 #
+# MCMC_REAL is float64 in double mode, float32 in float mode.
+#
 
 pdescr1 = array((1,  1),  dtype=int32)
-pmint1 = array((-10., -10.), dtype=float32)
-pmaxt1 = array((10., 10.),   dtype=float32)
+pmint1 = array((-10., -10.), dtype=MCMC_REAL)
+pmaxt1 = array((10., 10.),   dtype=MCMC_REAL)
 
-coor1 =  array((2, 2, 0.25, 0.5), dtype=float32) # Coeefficients used by model
-dat1 =   zeros(1, dtype=float32) # Rosenbrok function will be compared with zero
+coor1 =  array((2, 2, 0.25, 0.5), dtype=MCMC_REAL) # Coefficients used by model
+dat1 =   zeros(1, dtype=MCMC_REAL) # Rosenbrock function is compared with zero
 
 #
 # Create the 'rosen' object of the 'Mcgpu' class.
@@ -135,4 +138,3 @@ fig.text(.43, 0.95, r'Rosenbrock Valley', fontsize=20, family='serif')
 
 
 show()
-
