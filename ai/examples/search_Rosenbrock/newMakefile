@@ -1,0 +1,30 @@
+#
+# Compile and build mcmc_interf.so Python extension module
+# in the src/ directory. 
+#
+
+TASKDIR = $(CURDIR)             #### $(PWD) 
+MODELDIR = $(TASKDIR)
+export MODELDIR       # The current dir must have model.cuh to include
+
+.PHONY:	all clean purge 
+
+all:
+	echo "CUDA_MCMC is: $(CUDA_MCMC)"
+	cd $(CUDA_MCMC)/src && \
+           python setup_mcmc.py build_ext --inplace && \
+           mkdir -p ~/lib64/python  && \
+           cp mcmc_interf.so ~/lib64/python && \
+           cp imgpu.py  ~/lib64/python && \
+           cp obsdatafit.py ~/lib64/python && \
+           cd $(TASKDIR)
+	@echo "  "
+	@echo MODEL is included from $(MODELDIR)/model.cuh
+	@echo "  "
+
+clean:
+	cd $(CUDA_MCMC)/src && $(MAKE) clean && cd $(TASKDIR)
+
+purge:
+	cd $(CUDA_MCMC)/src && $(MAKE) purge && cd $(TASKDIR)
+
