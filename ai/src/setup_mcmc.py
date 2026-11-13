@@ -1,8 +1,11 @@
 #
 # To build the extension file mcmc_interf.so use the commands:
 #
-#   Float mode:   make purge; python setup_mcmc.py build_ext --inplace; make clean
-#   Double mode:  MCMC_DOUBLE=1 make purge; MCMC_DOUBLE=1 python setup_mcmc.py build_ext --inplace; make clean
+# Float mode:
+#   make purge; python setup_mcmc.py build_ext --inplace; make clean
+# Double mode:
+#   MCMC_DOUBLE=1 make purge; \
+#       MCMC_DOUBLE=1 python setup_mcmc.py build_ext --inplace; make clean
 #
 # or simply:
 #
@@ -13,9 +16,13 @@
 #   - set to 1 -> mcmc_interf_double.pyx (mcmc_real = double)
 #
 
-from distutils.core import setup
-from distutils.extension import Extension
-from Cython.Distutils import build_ext
+# from distutils.core import setup
+# from distutils.extension import Extension
+# from Cython.Distutils import build_ext
+
+from setuptools import setup, Extension
+from Cython.Build import build_ext
+
 import os
 import shutil
 import numpy as np
