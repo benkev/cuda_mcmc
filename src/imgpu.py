@@ -394,7 +394,7 @@ class Mcgpu(object):   # The new-style class must inherit the 'object' class
             self.pstp[i,:,:] = pmid[i]
 
         # Initialize tcur, temoerature indicse
-        n0_nbeta = np.arange(nbeta, dtype=np.float32) # 0..nbeta-1
+        n0_nbeta = np.arange(nbeta, dtype=np.int32) # 0..nbeta-1
         for iseq in range(nseq):
             self.tcur[:,iseq] = n0_nbeta
 
