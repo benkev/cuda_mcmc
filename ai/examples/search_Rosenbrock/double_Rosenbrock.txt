@@ -1,0 +1,40 @@
+%run search_Rosenbrock.py
+s_rndst = 21504
+HOST MCMC_REAL = double
+HOST imodel = 0
+HOST pmint:
+-10  -10  
+HOST pmaxt:
+10  10  
+HOST ptotal:
+0  0  
+HOST nburn = 400, nprm = 2
+BURN-IN: itr = 200 done
+BURN-IN: total of 400 iterations done
+Burn-in done
+MCMC: itr = 200 done
+MCMC: itr = 400 done
+MCMC: itr = 600 done
+MCMC: itr = 800 done
+MCMC:  total of 1000 iterations done
+GPU: runmcmc() done.
+sizeof(CMcmcFit) = 648 B
+The minimum chi^2 at chi2[8128] = 0.000000
+pout[8128] =  [1.01570744 1.03207333]
+
+Exact solution: (x,y) = (  1.000000,  1.000000)
+
+Best minimum found:
+     x           y       chi^2
+  1.015707   1.032073   0.000000
+  0.997384   0.989989   0.000005
+  0.997384   0.989989   0.000005
+  0.997384   0.989989   0.000005
+  0.997384   0.989989   0.000005
+  0.950402   0.902991   0.000006
+  0.950402   0.902991   0.000006
+  0.950402   0.902991   0.000006
+  0.950402   0.902991   0.000006
+  1.029514   1.055144   0.000010
+  1.029514   1.055144   0.000010
+  1.029514   1.055144   0.000010
