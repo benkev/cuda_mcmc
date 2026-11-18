@@ -302,13 +302,23 @@ __global__ void adjust_steps(CMcmcFit *mc) {
 
   rate = ((mcmc_real) sumh) / ((mcmc_real) min(mc->nadj,mc->n_cnt[ip]));
 
-  /* Adjust the step size: >30% -> x1.01; <20% -> /1.01; otherwise unchanged */
+  /* Adjust the step size: >30% -> x1.01; <20% -> /1.01;
+   * otherwise unchanged */
   if (rate > (mcmc_real)0.30)
     mc->pstp[ip] *= (mcmc_real)1.01;
-  else if (rate < (mcmc_real)0.20)
+  if (rate < (mcmc_real)0.20)
     mc->pstp[ip] /= (mcmc_real)1.01;
   /* else: do not change */
 
+  // /* Adjust the step size the way it was done by Kazunori Akiyama in
+  //  *     subroutine reMCMC_burnin(n,tcur,pcur,chisq,pstp,n_hist,n_cnt) */
+  // if (rate < (mcmc_real)0.30)
+  //     mc->pstp[ip] /= (mcmc_real)1.01;
+  // else if (rate > (mcmc_real)0.20)
+  //     mc->pstp[ip] *= (mcmc_real)1.01;
+
+
+  
   mc->n_cnt[ip] += 1;
 
 }

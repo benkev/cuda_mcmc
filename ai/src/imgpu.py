@@ -904,11 +904,11 @@ def calc_closures(phase, tsec, blin):
         ntimes = len(ibeg)  # Number of same-time data segments > 3 bls
       
     if len(phase) < 3 or ntimes == 0: # No triangles
-        cphs = np.array([], dtype=np.float32)
+        cphs = np.array([], dtype=MCMC_REAL)
         #cpid = np.array([], dtype=np.int64)
         cpix = np.array([], dtype=np.int32)
         trid = np.array([], dtype=np.int32)
-        tcphsec = np.array([], dtype=np.float32)
+        tcphsec = np.array([], dtype=MCMC_REAL)
         return cphs, cpid, trid, tcphsec  #================================>>>
 
     times = tsec[ibeg]            # Unique times
@@ -918,7 +918,7 @@ def calc_closures(phase, tsec, blin):
     triangles, triids = find_triangles(antennas)
     ntriangles = len(triangles[:,0])
     maxcps = ntimes*ntriangles   # Maximal number of closure phases
-    cphs = np.zeros(maxcps, np.float32)
+    cphs = np.zeros(maxcps, MCMC_REAL)
     cpix = np.zeros((maxcps,3), np.int32)
     trid = np.zeros((maxcps), np.int32)
     tcphsec = np.zeros((maxcps), float) # Closure phase times in seconds
@@ -1050,14 +1050,14 @@ def read_uvdata(uv_file):
     
     n = count_lines(uv_file)
     
-    amp =   np.zeros(n, np.float32)
-    phase = np.zeros(n, np.float32)
-    sig =   np.zeros(n, np.float32)
-    ulam =  np.zeros(n, np.float32)
-    vlam =  np.zeros(n, np.float32)
-    wlam =  np.zeros(n, np.float32)
-    wei =   np.zeros(n, np.float32)
-    tsec =  np.zeros(n, np.float32)
+    amp =   np.zeros(n, MCMC_REAL)
+    phase = np.zeros(n, MCMC_REAL)
+    sig =   np.zeros(n, MCMC_REAL)
+    ulam =  np.zeros(n, MCMC_REAL)
+    vlam =  np.zeros(n, MCMC_REAL)
+    wlam =  np.zeros(n, MCMC_REAL)
+    wei =   np.zeros(n, MCMC_REAL)
+    tsec =  np.zeros(n, MCMC_REAL)
     chan =  np.zeros(n, np.int32)
     #blid =  np.zeros(n, np.int32)  # Important! WHY????????????????????
     blin =  np.zeros((n,2), np.int32)
@@ -1075,7 +1075,7 @@ def read_uvdata(uv_file):
       
         nums = np.array(nums)     # Array of strings; just to ease indexing
         u, v, w, chan[i], amp[i], phase[i], weig, sig[i] = \
-           np.float_(nums[[5,6,7,10,11,12,13,14]])
+            MCMC_REAL(nums[[5,6,7,10,11,12,13,14]])
 
         if weig != 0.0:
             wei[i] = weig
@@ -1086,7 +1086,7 @@ def read_uvdata(uv_file):
             # row[:20] is like 2009:095:02:40:00.00 or so
             tsec[i] = timegm(strptime(row[:17], '%Y:%j:%H:%M:%S')) # + \
             if row[18:20].isdigit():
-                tsec[i] = tsec[i] + 0.01*np.float32(row[18:20])
+                tsec[i] = tsec[i] + 0.01*MCMC_REAL(row[18:20])
             a1 =  int(nums[8])
             a2 = -int(nums[9])
             blin[i,:] = a1, a2

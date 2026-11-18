@@ -12,6 +12,7 @@
 #
 #
 import imgpu
+from imgpu import MCMC_REAL
 import numpy as np
 from pylab import *
 import time
@@ -29,25 +30,6 @@ niter = 1000
 nbeta = 32
 nseq = 16
 
-
-#
-# The parameters below determine two different things:
-# - dimensions 'UVspan' of the UV domain where the model is calculated,
-#   grid size 'ngrid', and corresponding XY domain dimensions 'XYspan';
-# - width and height of the central cut of the brightness image 'XYwidth_uas',
-#   and the same of the visibility amplitude or phase image 'UVwidth_glam'.
-#
-# Function model_vis2bri_simple() inputs UVspan and ngrid, and outputs XYspan,
-# calculated as
-#    XYspan_uas = 3600.*degrees(ngrid/UVspan_glam)*1e-3 # in microarcseconds
-# Both finer grid (larger ngrid) and smaller UVspan infer larger XYspan, and
-# the brightness image of the central object becomes too small. 
-# Therefore, only central part of the brightness image should be plotted,
-# and the width and height of it is specified by 'XYwidth_uas'.
-# If plotting visibility, the same is made by 'XYwidth_uas'.
-#
-# Default values:
-#
 ngrid = 100
 XYspan_uas = 170.
 delX_uas = -0.7992                  # Micro arcseconds
@@ -67,11 +49,6 @@ argv = sys.argv
 
 print('argv = ', argv)
 
-#
-# In parsing the command line options of the form <variable>=<value>:
-# lv - "left value", the variable name;
-# rv - "right value", the value to be assigned to the variable.
-#
 if argc >= 3:
     modnum = int(argv[1])
     uvdata_file = argv[2]
@@ -113,13 +90,6 @@ elif argc < 3 or argc > 7:
       sys.exit(0);
 
 
-#
-# uvfile_esc is uvdata_file with escape characters before the underscores
-# Otherwise LaTeX interpret them as subscript prefixes
-#
-#uvfile_esc = uvdata_file.replace('_','\_')
-			
-
 if ngrid < 0:
     ngrid = -ngrid
     print('\nGrid size must be set. Example: ng=100. Exiting.\n')
@@ -136,10 +106,6 @@ if (XYspan_uas < 0) and (delX_uas < 0) and (delX_deg < 0):
     print('Exiting.')
     sys.exit(0)
 
-## if XYspan_uas < 0:
-##     print '\nXYspan_uas must be set. Example: XYspan_uas=160. Exiting.\n'
-##     sys.exit(0)
-
 if delX_deg > 0: XYspan_uas = ngrid*3600*1e6*delX_deg
 if delX_uas > 0: XYspan_uas = ngrid*delX_uas
 
@@ -147,95 +113,32 @@ if XYwidth_uas < 0: XYwidth_uas = XYspan_uas
 
 UVspan_glam = 3600.*(180./pi)*(ngrid/XYspan_uas)*1e-3
 
-#sys.exit(0)
-
 if modnum == 9:
-    #
-    # For 9-parameter (xringaus) model:
-    #
-    ## Zsp: zero spacing in any units (Jy or such)
-    ## Re: external  ring radius in microarcseconds 
-    ## rq: radius quotient, the internal radius, Ri = rq*Re. 0 < rq < 1
-    ## ecc: eccentricity of inner circle center from that of outer; in [-1..1]
-    ## fade: [0..1], "noncontrast" of the ring, 1-uniform, 0-from zero to max.
-    ## gax: Gaussian main axis, expressed in Re
-    ## aq: axes quotient, aq = gsx/gsy. 0 < aq < 1
-    ## gq: fraction of Gaussian visibility against ring visibility.
-    ##     0-ring only, 1-Gaussian only
-    ## th: angle of circular hole and brightness gradient orientation in radians
-    #
     pn = ('Zsp', 'Re', 'rq', 'ecc', 'fade', 'gax', 'aq', 'gq', 'th')
     pnx = (r'$Z_{sp}$', r'$R_e$', r'$r_q$', r'$Ecc$', r'$Fade$', r'$g_{ax}$', \
            r'$a_q$', r'$g_q$', r'$\theta^\circ$')
     ncol = 3    # Number of columns in the histogtam subplots
-    #
-    #                Zsp, Re, rq, ecc, fade, gax, aq, gq, th
-    #
 
-    ## pdescr = array((1,   1,  1,  1,  1,  1,   1,   1,  2), dtype=int32)
-    ## ptotal = array((2.4, 0., 0., 0., 0., 0.,  0.,  0., 0.), dtype=float32)
-    # Uniform disk: Search for Zsp and Re
-    # pdescr = array((1,   1,  0,  0,  0,  0,   0,   0,  0), dtype=int32)
-    # ptotal = array((2.4, 0., 0., 0., 1., 0.,  0.,  0., 0.), dtype=float32)
-    # NoGauss:
     pdescr = array((1,   1,  1,  1,  1,  1,   1,   1,  2), dtype=int32)
-    #pdescr = array((1,   1,  1,  1,  1,  0,   0,   0,  2), dtype=int32)
-    ptotal = array((2.4, 0., 0., 0., 1., 0.,  0.,  0., 0.), dtype=float32)
+    ptotal = array((2.4, 0., 0., 0., 1., 0.,  0.,  0., 0.), dtype=MCMC_REAL)
     bnd = array(((0.01, 5.0), (20., 60.), (0., 0.99), (0., 1.), (0., 1.), \
-                 (0.1, 2.), (0.1, 1.5), (0., 1.), (-pi, pi)), dtype=float32)
+                 (0.1, 2.), (0.1, 1.5), (0., 1.), (-pi, pi)), dtype=MCMC_REAL)
 
 elif modnum == 13:
-    #
-    # For 13-parameter (xringaus2) model:
-    #
-    ## Zsp: zero spacing in any units (Jy or such)
-    ## Re: external  ring radius in microarcseconds 
-    ## rq: radius quotient, the internal radius, Ri = rq*Re. 0 < rq < 1
-    ## ecc: eccentricity of inner circle center from that of outer; in [-1..1]
-    ## fade: [0..1], "noncontrast" of the ring, 1-uniform, 0-from zero to max.
-    ## gr: Rg/Re, Rg - distance of Gaussian center from the external ring center
-    ## gax: Gaussian main axis, expressed in Re
-    ## aq: axes quotient, aq = gsx/gsy. 0 < aq < 1
-    ## gq: fraction of Gaussian visibility against ring visibility.
-    ##     0-ring only, 1-Gaussian only
-    ## alpha: angle of the Gaussian center orientation in radians
-    ## beta: angle of the Gaussian rotation in radians
-    ## eta: angle of internal circular hole orientation in radians
-    ## th: angle of slope orientation in radians
-    #
     pn = ('Zsp', 'Re', 'rq', 'ecc', 'fade', 'gr', 'gax', 'aq', 'gq', 'alpha', \
           'beta', 'eta', 'th')
     pnx = (r'$Z_{sp}$', r'$R_e$', r'$r_q$', r'$Ecc$', r'$Fade$', r'$g_{r}$', \
            r'$g_{ax}$', r'$a_q$', r'$g_q$', r'$\alpha^\circ$', \
            r'$\beta^\circ$', r'$\eta^\circ$', r'$\theta^\circ$')
     ncol = 4    # Number of columns in the histogtam subplots
-    #
-    #         Zsp, Re, rq, ecc, fade, gr, gax, aq, gq, alpha, beta, eta, th
-    #
+
     pdescr = array((1,   1,   1,  1,  1,  1,  1,   1,  1,  2,  2,  2,  2),
                    dtype=int32)
-    #pdescr = array((1,   1,   1,  1,  1,  0,  0,   0,  0,  0,  0,  2,  2),
-    #               dtype=int32)
     ptotal = array((2.4, 31., 0., 0., 0., 0., 0.,  0., 0., 0., 0., 0., 0), 
-                   dtype=float32)
-    # Uniform disk: Search for Zsp and Re
-    ## pdescr = array((1,   1,  0,  0,  0,  0,   0,   0,  0,  0,  0,  0,  0),
-    ##              dtype=int32)
-    ## ptotal = array((2.4, 31., 0., 0., 0., 0., 0.,  0., 0., 0., 0., 0., 0), 
-    ##              dtype=float32)
-    #pdescr = array((1,   1,  1,  1,  1,  1,   1,   1,  1,  2,  2,  2,  2),
-    # NoGauss:
-    #pdescr = array((1,   1,  1,  1,  1,  0,   0,   0,  0,  0,  0,  2,  2)
-    #               dtype=int32)
-    #ptotal = array((2.4, 31., 0.9, 0., 0., 0.6, 0.,  0., 0.65, 0., pi/2., \
-    #                0., 0),
-    ## ptotal = array((2.4, 31., 0., 0., 1., 0., 0.,  0., 0., 0., 0., 0., 0),
-    ##                dtype=float32)
-    #ptotal = array((2.4, 31., 0.9, 0., 0., 0., 0.,  0., 0., 0., 0., 0., 0),
-    #               dtype=float32)
+                   dtype=MCMC_REAL)
     bnd = array(((0.01, 5.0), (20., 60.), (0., 0.99), (0., 1.), (0., 1.), \
                  (0., 1.), (0.1, 2.), (0.1, 1.), (0., 1.), \
-             (-pi, pi), (0., pi/2.), (-pi, pi), (-pi, pi)), dtype=float32)
+             (-pi, pi), (0., pi/2.), (-pi, pi), (-pi, pi)), dtype=MCMC_REAL)
 else:
     print("Wrong number of model parameters; you entered ", modnum, end=' ')
     print(" may be either 9 or 13")
@@ -279,7 +182,7 @@ isnrc_le30 = where(snrc <= 30.)[0]
 isnrc_gt30 = where(snrc > 30.)[0]
 
 sgra.ecph[isnrc_gt30] = 1./snrc[isnrc_gt30]
-sgra.ecph[isnrc_le30] = np.float32(radians(pherr[100*np.int_(snrc[isnrc_le30])]))
+sgra.ecph[isnrc_le30] = MCMC_REAL(radians(pherr[100*np.int_(snrc[isnrc_le30])]))
 sgra.std2r[sgra.nvis:] = 1./(sgra.ecph**2)
 
 #sys.exit(0)
@@ -293,7 +196,7 @@ im = chi2.argmin()   # Indices of the chi^2 minimums
 
 nseqitr = int32(sgra.nseq*sgra.niter)
 
-pout1 = zeros((sgra.nprm,nseqitr), dtype=float32)
+pout1 = zeros((sgra.nprm,nseqitr), dtype=MCMC_REAL)
 for i in range(sgra.nprm):
     pout1[i,:] = sgra.pout_4d[i,0,:,:].flatten()
 
@@ -516,7 +419,7 @@ else:               # For ODD  ngrid
 
 
 
-mus = zeros(sgra.nprm)
+mus = zeros(sgra.nprm, dtype=MCMC_REAL)
 for i in range(sgra.nprm):
     mus[i] = mean(pout1[i,:])
 
@@ -861,7 +764,3 @@ if sgra.use_cphs:  # Plot closure phases
             (cnam, modnum, czsp, crad, crot, cnoise, nburn, niter))
     
 show() if showPlot else close()
-
-
-
-#show()
