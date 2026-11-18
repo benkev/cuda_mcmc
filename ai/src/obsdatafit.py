@@ -23,6 +23,14 @@ import astropy.io.fits as pf      # Modern pyfits
 import os
 import re
 
+#
+# MCMC_REAL is float or double, depending on how mcmc_interf was built.
+# It is used for all critical arrays: dat, datm, chi2m, chi2c, chi2,
+# pcur, pout, ptent, pstp, beta, std2r, coor, ptotal, pmint, pmaxt.
+# Service arrays (rndst, indices, counters, flags) always use np.uint8/np.int32.
+#
+MCMC_REAL = np.float64 if mi.MCMC_DOUBLE_FLAG else np.float32
+MCMC_REAL_STR = "float64" if mi.MCMC_DOUBLE_FLAG else "float32"
 
 #
 # On 32-bit system with sys.maxint = 2**32-1:
@@ -330,11 +338,11 @@ def calc_closures1(phase, tsec, blid):
         ntimes = len(ibeg)  # Number of same-time data segments > 3 bls
         
     if len(phase) < 3 or ntimes == 0: # No triangles
-        cphs = np.array([], dtype=np.float32)
+        cphs = np.array([], dtype=MCMC_REAL)
         #cpid = np.array([], dtype=np.int64)
         cpix = np.array([], dtype=np.int32)
         trid = np.array([], dtype=np.int32)
-        tcphsec = np.array([], dtype=np.float32)
+        tcphsec = np.array([], dtype=MCMC_REAL)
         return cphs, cpid, trid, tcphsec  #================================>>>
 
     times = tsec[ibeg]            # Unique times
@@ -343,7 +351,7 @@ def calc_closures1(phase, tsec, blid):
     triangles, triids = find_triangles(antennas)
     ntriangles = len(triangles[:,0])
     maxcps = ntimes*ntriangles   # Maximal number of closure phases
-    cphs = np.zeros(maxcps, np.float32)
+    cphs = np.zeros(maxcps, MCMC_REAL)
     #cpix = np.zeros((maxcps,3), int)
     #cpid = np.zeros((maxcps), np.int64)
     cpix = np.zeros((maxcps,3), np.int32)
@@ -997,7 +1005,7 @@ def readamp2(amp_data_file):
             ##           float(row[18:20])
             tsec[i] = timegm(strptime(row[:17], '%Y:%j:%H:%M:%S')) # + \
             if row[18:20].isdigit():
-                tsec[i] = tsec[i] + 0.01*np.float32(row[18:20])
+                tsec[i] = tsec[i] + 0.01*MCMC_REAL(row[18:20])
             a1 =  int(nums[8])
             a2 = -int(nums[9])
             #print a1, a2
@@ -1090,7 +1098,7 @@ def readamp3(amp_data_file):
             ##           float(row[18:20])
             tsec[i] = timegm(strptime(row[:17], '%Y:%j:%H:%M:%S')) # + \
             if row[18:20].isdigit():
-                tsec[i] = tsec[i] + 0.01*np.float32(row[18:20])
+                tsec[i] = tsec[i] + 0.01*MCMC_REAL(row[18:20])
             a1 =  int(nums[8])
             a2 = -int(nums[9]) 
             bl[i] = a1 + PK2I*a2     # Get unique baseline ID
@@ -3289,8 +3297,8 @@ def read_vincent_cphs():
     yd = np.zeros((nlines,2), np.int32)      # years and days of year
     #cpix = array(((1,2,3),), dtype=np.int32)
     utim = np.zeros((nlines), np.float)
-    cphs0 = np.zeros((nlines), np.float32)
-    ecph0 = np.zeros((nlines), np.float32)
+    cphs0 = np.zeros((nlines), MCMC_REAL)
+    ecph0 = np.zeros((nlines), MCMC_REAL)
     utsec = np.zeros((nlines), np.float)
 
     # Pattern to match a number string
@@ -3318,8 +3326,8 @@ def read_vincent_cphs():
     ibeg, iend = equal_spans(utim, singles=True)
     ncph = len(ibeg)
     
-    cphs = np.zeros((ncph), np.float32)
-    ecph = np.zeros((ncph), np.float32)
+    cphs = np.zeros((ncph), MCMC_REAL)
+    ecph = np.zeros((ncph), MCMC_REAL)
     tcphsec = np.zeros((ncph), np.float)
     cpix = np.zeros((ncph,3), dtype=np.int32)
     cpix[:,0] = 1; cpix[:,1] = 2; cpix[:,2] = 3;  # set (1,2,3) for all times
@@ -3430,16 +3438,16 @@ def read_vincent_cphs_coord():
         s = f3.readline()
 
 
-    cphs = array(cphs, dtype=np.float32)    # Closure phases
-    snr =  array(snr, dtype=np.float32)     # Bispectral signal/noise ratio
-    #yr =  array(yr,   dtype=np.float32)     # days of year
-    #doy = array(doy,  dtype=np.float32)     # years 
-    t_cp = array(t_cp, dtype=np.float32)     # UT in hours 
-    t_uv = array(t_uv, dtype=np.float32)     # UT in hours 
-    usf = array(usf, dtype=np.float32)
-    vsf = array(vsf, dtype=np.float32)
-    ufp = array(ufp, dtype=np.float32)
-    vfp = array(vfp, dtype=np.float32)
+    cphs = array(cphs, dtype=MCMC_REAL)    # Closure phases
+    snr =  array(snr, dtype=MCMC_REAL)     # Bispectral signal/noise ratio
+    #yr =  array(yr,   dtype=MCMC_REAL)     # days of year
+    #doy = array(doy,  dtype=MCMC_REAL)     # years 
+    t_cp = array(t_cp, dtype=MCMC_REAL)     # UT in hours 
+    t_uv = array(t_uv, dtype=MCMC_REAL)     # UT in hours 
+    usf = array(usf, dtype=MCMC_REAL)
+    vsf = array(vsf, dtype=MCMC_REAL)
+    ufp = array(ufp, dtype=MCMC_REAL)
+    vfp = array(vfp, dtype=MCMC_REAL)
     
     #uvcp = vstack((usf,vsf,ufp,vfp)).T
 
