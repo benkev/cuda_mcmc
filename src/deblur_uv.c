@@ -94,7 +94,7 @@ long read_vis(FILE *infile, struct visstruct *data){
 	int ijunk;
 	double junk;
 	char cjunk;
-	char line[300],*fgets();
+	char line[300];               // ,*fgets();
 
 
 	while ((fgets(line,300,infile))!=NULL){

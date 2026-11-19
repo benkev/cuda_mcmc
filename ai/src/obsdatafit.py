@@ -29,9 +29,7 @@ import re
 # pcur, pout, ptent, pstp, beta, std2r, coor, ptotal, pmint, pmaxt.
 # Service arrays (rndst, indices, counters, flags) always use np.uint8/np.int32.
 #
-MCMC_REAL = np.float64 if mi.MCMC_DOUBLE_FLAG else np.float32
-MCMC_REAL_STR = "float64" if mi.MCMC_DOUBLE_FLAG else "float32"
-
+from imgpu import MCMC_REAL
 #
 # On 32-bit system with sys.maxint = 2**32-1:
 # Maximum 2**10 = 1024 antennas and closure phases
