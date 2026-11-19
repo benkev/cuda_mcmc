@@ -332,8 +332,8 @@ __global__ void replica_exchange(CMcmcFit *mc, int burn, int itr) {
   /*  */
   int ist = Iseq;
   int nbeta_minus_1, idum, k0, k1, i0, i1;
-  mcmc_real u, alpha;
-  mcmc_real dum, r;
+  float r, u, alpha;
+  mcmc_real dum;
   int ipo, ipc, ico, k, jprm, ibeta, ipm, ito, itc;
 
 
@@ -344,23 +344,24 @@ __global__ void replica_exchange(CMcmcFit *mc, int burn, int itr) {
 
   for (ibeta = 0; ibeta < mc->nbeta; ibeta++) {
     /* Randomly select adjacent chains */
-    r = (mcmc_real)curand_uniform(&mc->rndst[ist]);
+    r = curand_uniform(&mc->rndst[ist]);
     k = (int) (nbeta_minus_1*r);
     if (k >= nbeta_minus_1) k = nbeta_minus_1 - 1;  /* Guard r==1.0 */
 
     /* calculate metropolis ratio in selected adjacent temperature chains */
-    k0 = k*Nseq + Iseq;       /* [k,nsec] in [nbeta,nsec] */
-    k1 = (k+1)*Nseq + Iseq;   /* [k+1,nsec] in [nbeta,nsec] */
-    r = (mcmc_real)exp(-(mcmc_real)0.5*(mc->beta[k+1] - mc->beta[k]) * \
+    k0 = k*Nseq + Iseq;       /* [k,nsec]   in [nbeta,nsec] */
+    k1 = k0 + Nseq;           /* [k+1,nsec] in [nbeta,nsec] */
+    // k1 = (k+1)*Nseq + Iseq;   /* [k+1,nsec] in [nbeta,nsec] */
+    r = (float)exp(-(mcmc_real)0.5*(mc->beta[k+1] - mc->beta[k]) * \
 	    (mc->chi2c[k0] - mc->chi2c[k1]));
 
     /* calculate probability for acceptance */
-    alpha = min(r, (mcmc_real)1);
+    alpha = min(r, 1.0f);
     /* exchange adjacent temperature chains with a probability alpha */
-    u = (mcmc_real)curand_uniform(&mc->rndst[ist]);
+    u = curand_uniform(&mc->rndst[ist]);
 
     if (u <= alpha) {
-      /* exchange tempertures */
+      /* exchange temperatures */
       idum = mc->tcur[k0];
       mc->tcur[k0] = mc->tcur[k1];
       mc->tcur[k1] = idum;
