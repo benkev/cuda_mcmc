@@ -205,6 +205,8 @@ class Mcgpu(object):   # The new-style class must inherit the 'object' class
             self.pstp[i,:,:] = pmid[i]
 
         # Initialize tcur, temperature indices
+        # Initially, it should contain nseq columns of cardinals
+        # from 0 up to nbeta-1
         n0_nbeta = np.arange(nbeta, dtype=np.int32) # 0..nbeta-1
         for iseq in range(nseq):
             self.tcur[:,iseq] = n0_nbeta
