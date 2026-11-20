@@ -96,8 +96,13 @@ The MCMC with replica exchange is implemented as a function mcmcuda()
 #        can determen at which pass it has been called by its parameter ipass
 #        taking values from 0 to npass-1.
 #
-# pstp[nprm,nbeta,nseq]: initial parameter steps for each mutable parameter,
-#                        each temperature, and each sequence.
+# pstp[nprm,nbeta,nseq]: standard deviations of the parameter steps for each
+#                        mutable parameter, each temperature, and each sequence.
+#                        The steps are computed as normal random numbers with
+#                        the std = pstp[k,ibeta,iseq] in gen_proposal().
+#                        At the burn-in stage, the pstp values are adjusted
+#                        in adjust_steps().
+#
 # imodel: an integer parameter passed to the model() function. The usage is
 #         arbitrary. For example, it may be a model number to select between
 #         several models.
@@ -110,9 +115,10 @@ The MCMC with replica exchange is implemented as a function mcmcuda()
 #
 # ndatm: must be equal nbeta*nseq*ndat
 #
+#
 # -----------------------------------------------------------------------------
 #
-# Workspace arrays of MCMC algorithm
+# Workspace arrays and data of MCMC algorithm
 #
 # datm[nbeta,nseq,ndat]: computed model data.
 #
@@ -136,6 +142,8 @@ The MCMC with replica exchange is implemented as a function mcmcuda()
 # ptentn[nbeta,nseq]: tentative parameter indices for each temperature and each
 #                     sequence.
 #
+# nchi2m = nbeta*nseq*ndat: number of chi^2's for the model;
+#                           threads in model data calculation
 # -----------------------------------------------------------------------------
 #
 # Output parameters of MCMC algorithm
@@ -168,5 +176,9 @@ The MCMC with replica exchange is implemented as a function mcmcuda()
 #
 # n_hist[nadj,nprm,nbeta,nseq]: counting numbers of "accept" of proposal set
 #                               in Metropolis-Hastings algorithm
+#
+# rate_acpt[nbeta,nseq]: rate of acceptance
+#
+# rate_exch[nbeta,nseq]: rate of exchange FIX ERROR IN imgpu.py !!!!!!!
 #
 #

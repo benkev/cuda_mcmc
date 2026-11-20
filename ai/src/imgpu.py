@@ -505,7 +505,7 @@ class Mcgpu_Sgra(Mcgpu):
 
         self.ndat = ndat = nvis + ncph
         self.nidat = nidat = short3
-        self.ndatm = ndatm = nbeta*nseq*(ndat + nvis)
+        self.ndatm = ndatm = nbeta*nseq*(ndat + nvis) # ????? 
         self.seed = np.uint64(seed)
 
         # MCMC_REAL
@@ -581,7 +581,10 @@ class Mcgpu_Sgra(Mcgpu):
         # Rates of acceptance and of exchange
         nitsq = MCMC_REAL(self.niter*self.nseq)
         self.rate_acpt = sum(self.n_acpt, 2)/nitsq
-        self.rate_exch = sum(self.n_exch, 2)/nitsq
+        self.rate_exch = sum(self.n_exch, 2)/nitsq   # ???????? axis 2 ???
+ 
+        print("self.n_acpt.shape = ", self.n_acpt.shape)
+        print("self.n_exch.shape = ", self.n_exch.shape)
 
         return 0
 

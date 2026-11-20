@@ -55,6 +55,9 @@ __global__ void init_rng(CMcmcFit *mc) {
 //==========================================================
 /* init_pcur<<<nseq,nbeta>>>(mc_d); */
 
+/*
+ * Set pcur[ibeta,iseq,ivar[:]] to random values within the prior
+ */
 __global__ void init_pcur(CMcmcFit *mc) {
 
   int ist = Nseq*Ibeta + Iseq;    /* [ibeta,iseq] */
@@ -165,12 +168,13 @@ __global__ void gen_proposal(CMcmcFit *mc) {
 
   int ist = Nseq*Ibeta + Iseq;    /* [ibeta,iseq] */
   int k, t, pt;
-  mcmc_real r, p, std, randn;
+  float r;
+  mcmc_real p, std, randn;
 
   if (ist >= mc->nrndst) return;
 
   /* Randomly select parameter number k to make step */
-  r = (mcmc_real)curand_uniform(&mc->rndst[ist]);
+  r = curand_uniform(&mc->rndst[ist]);
   k = (int) (mc->nprm*r); /* Random parameter index 0..nprm-1 into ivar[] */
   if (k >= mc->nprm) k = mc->nprm - 1;  /* Guard against r == 1.0 */
   t = mc->ivar[k]; /* Random parameter index into pcur[ibeta,iseq,:]  */
