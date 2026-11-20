@@ -273,7 +273,7 @@ __global__ void adjust_steps(CMcmcFit *mc) {
 
   int modn, ihist, sumh;
   int iadj;
-  mcmc_real rate;
+  float rate;
   /* Here k is the parameter number randomly chosen in gen_proposal() */
   int k = mc->invar[mc->ptentn[ist]]; /* [0:nprm-1] from [0:nptot-1] */
   int ip = (Nbeta*k + Ibeta)*Nseq + Iseq; /* [k,ibeta,iseq] */
@@ -300,15 +300,15 @@ __global__ void adjust_steps(CMcmcFit *mc) {
     sumh += mc->n_hist[ihist];
   }
 
-  rate = ((mcmc_real) sumh) / ((mcmc_real) min(mc->nadj,mc->n_cnt[ip]));
+  rate = ((float) sumh) / ((float) min(mc->nadj,mc->n_cnt[ip]));
 
   /* Adjust the step size: >30% -> x1.01; <20% -> /1.01;
    * otherwise unchanged */
-  if (rate > (mcmc_real)0.30)
+  if (rate > 0.3f)
     mc->pstp[ip] *= (mcmc_real)1.01;
-  if (rate < (mcmc_real)0.20)
+  if (rate < 0.2f)
     mc->pstp[ip] /= (mcmc_real)1.01;
-  /* else: do not change */
+  /* else if 0.2 <= rate <= 0.3: do not change */
 
   // /* Adjust the step size the way it was done by Kazunori Akiyama in
   //  *     subroutine reMCMC_burnin(n,tcur,pcur,chisq,pstp,n_hist,n_cnt) */
@@ -316,8 +316,6 @@ __global__ void adjust_steps(CMcmcFit *mc) {
   //     mc->pstp[ip] /= (mcmc_real)1.01;
   // else if (rate > (mcmc_real)0.20)
   //     mc->pstp[ip] *= (mcmc_real)1.01;
-
-
   
   mc->n_cnt[ip] += 1;
 
