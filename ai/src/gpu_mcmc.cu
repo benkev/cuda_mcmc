@@ -349,8 +349,8 @@ __global__ void replica_exchange(CMcmcFit *mc, int burn, int itr) {
     if (k >= nbeta_minus_1) k = nbeta_minus_1 - 1;  /* Guard r==1.0 */
 
     /* calculate metropolis ratio in selected adjacent temperature chains */
-    k0 = k*Nseq + Iseq;       /* [k,nsec]   in [nbeta,nsec] */
-    k1 = k0 + Nseq;           /* [k+1,nsec] in [nbeta,nsec] */
+    k0 = k*Nseq + Iseq;       /* [k,isec]   in [nbeta,nsec] */
+    k1 = k0 + Nseq;           /* [k+1,isec] in [nbeta,nsec] */
     // k1 = (k+1)*Nseq + Iseq;   /* [k+1,nsec] in [nbeta,nsec] */
     r = (float)exp(-(mcmc_real)0.5*(mc->beta[k+1] - mc->beta[k]) * \
 	    (mc->chi2c[k0] - mc->chi2c[k1]));
@@ -360,28 +360,30 @@ __global__ void replica_exchange(CMcmcFit *mc, int burn, int itr) {
     /* exchange adjacent temperature chains with a probability alpha */
     u = curand_uniform(&mc->rndst[ist]);
 
-    if (u <= alpha) {
-      /* exchange temperatures */
-      idum = mc->tcur[k0];
-      mc->tcur[k0] = mc->tcur[k1];
-      mc->tcur[k1] = idum;
+    if (u <= alpha) {       /* exchange temperatures */
+        
+      /* exchange k'th and (k+1)'th temperature indices in tcur[nbeta,nsec] */
+      idum = mc->tcur[k0];           /* idum = tcur[k,iseq]           */
+      mc->tcur[k0] = mc->tcur[k1];   /* tcur[k,iseq] = tcur[k+1,iseq] */
+      mc->tcur[k1] = idum;           /* tcur[k+1,iseq] = idum         */
 
       /* exchange parameters pcur[k,iseq,:] and pcur[k+1,iseq,:] */
       for(jprm = 0; jprm < mc->nptot; jprm++) {
           i0 = k0*mc->nptot + jprm;
           i1 = k1*mc->nptot + jprm;
-          dum = mc->pcur[i0];
-          mc->pcur[i0] =  mc->pcur[i1];
-          mc->pcur[i1] = dum;
+          dum = mc->pcur[i0];           /* dum = pcur[k,iseq,:]              */
+          mc->pcur[i0] =  mc->pcur[i1]; /* pcur[k,iseq,:] = pcur[k+1,iseq,:] */
+          mc->pcur[i1] = dum;           /* pcur[k+1,iseq,:] = dum            */
       } /* for(jprm = 0; jprm < mc->nptot; jprm++) */
 
-      /* exchange chisquares */
+      /* exchange chi-squares */
       dum = mc->chi2c[k0];
       mc->chi2c[k0] = mc->chi2c[k1];
       mc->chi2c[k1] = dum;
 
       /* At the main stage, n_exch[k,iseq]++; */
-      if (burn == 0) mc->n_exch[k*Nseq+Iseq]++;
+      // if (burn == 0) mc->n_exch[k*Nseq+Iseq]++;
+      if (burn == 0) mc->n_exch[k0]++;  /* k0 = k*Nseq + Iseq */
 
 
     } /* if (u <= alpha)  */
@@ -393,7 +395,7 @@ __global__ void replica_exchange(CMcmcFit *mc, int burn, int itr) {
   */
   if (Iseq == 0) mc->itr++;
 
-  if (burn) return; /* At the burn-in stage pout[] is not updated */
+  if (burn) return; /* At the burn-in stage pout, tout, chi2 are not updated */
 
   /*
    * Saving results
@@ -407,6 +409,7 @@ __global__ void replica_exchange(CMcmcFit *mc, int burn, int itr) {
         mc->pout[ipo] = mc->pcur[ipc];
       }
     } /* for (ipm = 0; ipm < mc->nptot; ipm++) */
+    
     /* tout[ibeta,iseq,itr] = tcur[ibeta,iseq] */
     ito = (Nseq*ibeta + Iseq)*mc->niter + itr;
     itc = Nseq*ibeta + Iseq;

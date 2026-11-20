@@ -79,7 +79,10 @@ The MCMC with replica exchange is implemented as a function mcmcuda()
 #
 # tcur[nbeta,nseq]: integer values of the "temperature" indices. On entry it
 #                   should contain nseq columns of cardinals from 0 up to
-#                   nbeta-1.
+#                   nbeta-1. In the process of replica exchange, randomly
+#                   chosen k'th and (k+1)'th elements in each isec'th
+#                   column of tcur are transposed, so at the end of replica
+#                   exchange tcur has all the temperature permutations.
 #
 # n_cnt[nprm,nbeta,nseq]: numbers of Metropolis trials for each mutable
 #                         parameter, each temperature, and each sequence.
@@ -152,6 +155,8 @@ The MCMC with replica exchange is implemented as a function mcmcuda()
 #                              parameter can provide important information:
 #                              hist(po[0,:], 50, color='b'); grid(1) - for
 #                              the 0-th parameter and so on.
+#
+# tout[nbeta,nseq,niter]: snapshots of tcur[nbeta,nseq] after each iteration.
 #
 # chi2[nseq,niter]
 #
