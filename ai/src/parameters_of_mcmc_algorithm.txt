@@ -137,10 +137,14 @@ The MCMC with replica exchange is implemented as a function mcmcuda()
 #                    with the new ones.
 #
 # ptent[nbeta,nseq]: tentative parameter values for each temperature and each
-#                    sequence.
+#                    sequence. Here the randomly chosen in gen_proposal
+#                    in the thread <ibeta,iseq> parameter is saved
+#                    temporarily until the moment when the decision is made
+#                    in spmp_mcmc() to keep the proposed parameter in pcur
+#                    or revert it to the value saved in ptent.
 #
 # ptentn[nbeta,nseq]: tentative parameter indices for each temperature and each
-#                     sequence.
+#                     sequence (thread <ibeta,iseq>)
 #
 # nchi2m = nbeta*nseq*ndat: number of chi^2's for the model;
 #                           threads in model data calculation

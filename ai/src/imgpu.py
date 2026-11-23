@@ -255,10 +255,13 @@ class Mcgpu(object):   # The new-style class must inherit the 'object' class
 
         #
         # Rates of acceptance and of exchange
+        # Find averages over all the iterations and sequences
         #
         nitsq = MCMC_REAL(self.niter*self.nseq)
-        self.rate_acpt = sum(self.n_acpt, 2)/nitsq
-        self.rate_exch = sum(self.n_exch, 2)/nitsq
+        # self.rate_acpt = sum(self.n_acpt, 2)/nitsq
+        # self.rate_exch = sum(self.n_exch, 2)/nitsq
+        self.rate_acpt = np.sum(self.n_acpt, axis=2)/nitsq   # (nprm, nbeta)
+        self.rate_exch = np.sum(self.n_exch, axis=1)/nitsq   # (nbeta,)
 
         #
         # Select only the coldest (beta==0) temperature from self.pout_4d[] and:
@@ -577,15 +580,16 @@ class Mcgpu_Sgra(Mcgpu):
                       reshape((self.nbeta,self.nseq,self.ndat)) # Head
         self.mpha = self.datm[self.nchi2m:]. \
                     reshape((self.nbeta,self.nseq,self.nvis))  # Tail
-
+        #
         # Rates of acceptance and of exchange
+        # Find averages over all the iterations and sequences
+        #
         nitsq = MCMC_REAL(self.niter*self.nseq)
-        self.rate_acpt = sum(self.n_acpt, 2)/nitsq
-        self.rate_exch = sum(self.n_exch, 2)/nitsq   # ???????? axis 2 ???
+        # self.rate_acpt = sum(self.n_acpt, 2)/nitsq # WRONG
+        # self.rate_exch = sum(self.n_exch, 2)/nitsq # WRONG
+        self.rate_acpt = np.sum(self.n_acpt, axis=2)/nitsq   # (nprm, nbeta)
+        self.rate_exch = np.sum(self.n_exch, axis=1)/nitsq   # (nbeta,)
  
-        print("self.n_acpt.shape = ", self.n_acpt.shape)
-        print("self.n_exch.shape = ", self.n_exch.shape)
-
         return 0
 
 
