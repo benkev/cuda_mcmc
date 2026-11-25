@@ -113,6 +113,9 @@ if XYwidth_uas < 0: XYwidth_uas = XYspan_uas
 
 UVspan_glam = 3600.*(180./pi)*(ngrid/XYspan_uas)*1e-3
 
+print("nbeta = %d, nseq = %d, nburn = %d, niter = %d" %
+      (nbeta, nseq, nburn, niter))
+
 if modnum == 9:
     pn = ('Zsp', 'Re', 'rq', 'ecc', 'fade', 'gax', 'aq', 'gq', 'th')
     pnx = (r'$Z_{sp}$', r'$R_e$', r'$r_q$', r'$Ecc$', r'$Fade$', r'$g_{ax}$', \
