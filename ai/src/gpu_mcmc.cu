@@ -192,10 +192,10 @@ __global__ void gen_proposal(CMcmcFit *mc) {
   ipstp = (Nbeta*k + Ibeta)*Nseq + Iseq;
   std = mc->pstp[ipstp];                     /* pstp[k,ibeta,iseq] */
 
-  if (k == 4 && Ibeta == 15 && Iseq == 0)
-      printf("pstp[4,15,0] = %g\n", std); 
-  if (k == 4 && Ibeta == 16 && Iseq == 0)
-      printf("pstp[4,16,0] = %g\n", std); 
+  // if (k == 4 && Ibeta == 15 && Iseq == 0)
+  //     printf("pstp[4,15,0] = %g\n", std); 
+  // if (k == 4 && Ibeta == 16 && Iseq == 0)
+  //     printf("pstp[4,16,0] = %g\n", std); 
   
   randn = (mcmc_real)curand_normal(&mc->rndst[ist]);
   p = p + std*randn;

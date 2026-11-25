@@ -9,12 +9,16 @@
 #   make                 -> float  (mcmc_real = float)
 #   make MCMC_DOUBLE=1   -> double (mcmc_real = double)
 #
+# Two GPU architecture modes:
+#   make                 -> sm_86 (A10), sm_89 (L4)   [server, CUDA 13.x]
+#   make PASCAL=1        -> sm_61 (GTX 1050 Ti)      [home,  CUDA 12.x]
+#
+# CUDA 13.x no longer supports offline compilation for Pascal (sm_61),
+# so PASCAL=1 must be built with CUDA 12.x.
+#
 # The MODELDIR environment variable must point to the application
 # directory containing model.cuh. It is set by the application-level
 # Makefile (template/Makefile or a copy of it).
-#
-# GPU architectures: sm_61 (GTX 1050 Ti), sm_86 (A10), sm_89 (L4).
-# If you have a different GPU, adjust the -gencode lines below.
 #
 
 CC      = gcc
@@ -23,13 +27,33 @@ CXXFLAGS = -g -Xcompiler -fPIC -Xcompiler -fno-exceptions
 OBJECTS  = mcmcjob.o gpu_mcmc.o
 BASEDIR  = $(CURDIR)
 
-# --- GPU architectures -----------------------------------------------------
-# Add or remove -gencode lines for your GPUs.
-# sm_61 = GTX 1050 Ti, sm_86 = A10, sm_89 = L4
-GENCODE = -gencode arch=compute_61,code=sm_61 \
-          -gencode arch=compute_86,code=sm_86 \
-          -gencode arch=compute_89,code=sm_89
+# # --- GPU architectures -----------------------------------------------------
+# # PASCAL=1: build for Pascal (GTX 1050 Ti, sm_61) using CUDA 12.x.
+# # Default : build for Ampere (A10, sm_86) and Ada (L4, sm_89) using CUDA 13.x.
+# ifeq ($(PASCAL),1)
+#   GENCODE = -gencode arch=compute_61,code=sm_61
+# else
+#   GENCODE = -gencode arch=compute_86,code=sm_86 \
+#             -gencode arch=compute_89,code=sm_89
+# endif
 
+# --- GPU architectures -----------------------------------------------------
+# PASCAL (any value, even empty): build for Pascal (GTX 1050 Ti, sm_61),
+#                                  requires CUDA 12.x.
+# Default                       : build for Ampere (A10, sm_86) and
+#                                  Ada (L4, sm_89), requires CUDA 13.x.
+ifdef PASCAL
+  GENCODE = -gencode arch=compute_61,code=sm_61
+else
+  GENCODE = -gencode arch=compute_86,code=sm_86 \
+            -gencode arch=compute_89,code=sm_89
+endif
+
+# --- Precision mode --------------------------------------------------------
+ifdef MCMC_DOUBLE
+  CXXFLAGS += -DMCMC_DOUBLE
+  export MCMC_DOUBLE=1
+endif
 # --- Precision mode --------------------------------------------------------
 ifeq ($(MCMC_DOUBLE),1)
   CXXFLAGS += -DMCMC_DOUBLE

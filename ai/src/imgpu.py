@@ -201,9 +201,13 @@ class Mcgpu(object):   # The new-style class must inherit the 'object' class
 
         # Initialize parameter steps
         pmid = (self.pmax - self.pmin)/MCMC_REAL(50.)
+        self.pstp_init = np.copy(pmid)
+        self.pmid = np.copy(pmid)
         for i in range(nprm):
             self.pstp[i,:,:] = pmid[i]
 
+        print("Initial parameter steps: ", pmid)
+            
         # Initialize tcur, temperature indices
         # Initially, it should contain nseq columns of cardinals
         # from 0 up to nbeta-1
