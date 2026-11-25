@@ -167,7 +167,7 @@ __global__ void calc_chi2(CCalcModel *mc) {
 __global__ void gen_proposal(CMcmcFit *mc) {
 
   int ist = Nseq*Ibeta + Iseq;    /* [ibeta,iseq] */
-  int k, t, pt;
+  int k, t, pt, ipstp;
   float r;
   mcmc_real p, std, randn;
 
@@ -189,12 +189,19 @@ __global__ void gen_proposal(CMcmcFit *mc) {
   mc->ptent[ist] = p;               /* ptent[ibeta,iseq] = p; */
 
   /* Add to it a "Gaussian step" - noise with stdev = pstp[k,ibeta,iseq] */
-  std = mc->pstp[(Nbeta*k + Ibeta)*Nseq + Iseq]; /* pstp[k,ibeta,iseq] */
+  ipstp = (Nbeta*k + Ibeta)*Nseq + Iseq;
+  std = mc->pstp[ipstp];                     /* pstp[k,ibeta,iseq] */
+
+  if (k == 4 && Ibeta == 15 && Iseq == 0)
+      printf("pstp[4,15,0] = %g\n", std); 
+  if (k == 4 && Ibeta == 16 && Iseq == 0)
+      printf("pstp[4,16,0] = %g\n", std); 
+  
   randn = (mcmc_real)curand_normal(&mc->rndst[ist]);
   p = p + std*randn;
 
   if (mc->pdescr[t] == 2)
-    p = (mcmc_real)atan2(sin((double)p),cos((double)p)); /* Correct angle into +-pi */
+    p = (mcmc_real)atan2(sin((double)p),cos((double)p)); /* Angle into +-pi */
 
   /* check_p(); */
   if ((p < mc->pmint[t]) || (p > mc->pmaxt[t])) {/* If outside of the prior: */
