@@ -192,8 +192,9 @@ __global__ void gen_proposal(CMcmcFit *mc) {
   ipstp = (Nbeta*k + Ibeta)*Nseq + Iseq;
   std = mc->pstp[ipstp];                     /* pstp[k,ibeta,iseq] */
 
-  if (mc->itr <= 100 && Iseq == 0)
-      printf("k=%d, Ibeta=%d, pstp[%2d,%2d,0] = %g\n", k, Ibeta, k, Ibeta, std); 
+  // if (mc->itr <= 100 && Iseq == 0)
+  //     printf("k=%d, Ibeta=%d, pstp[%2d,%2d,0] = %g\n",
+  //            k, Ibeta, k, Ibeta, std); 
   // if (k == 4 && Ibeta == 15 && Iseq == 0)
   //     printf("pstp[4,15,0] = %g\n", std); 
   // if (k == 4 && Ibeta == 16 && Iseq == 0)
