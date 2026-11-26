@@ -39,8 +39,8 @@ UVwidth_glam = 20.
 # UVspan_glam is calculated
 
 
-#showPlot = True
-showPlot = False
+showPlot = True
+#showPlot = False
 png = False
 svg = False
 eps = False
