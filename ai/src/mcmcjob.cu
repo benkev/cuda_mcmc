@@ -422,6 +422,7 @@ CMcmcFit::CMcmcFit(int imodel,
   s_chi2   = sizeof(mcmc_real)*nseq*niter;
   s_beta   = sizeof(mcmc_real)*nbeta;
   s_acpt   = sizeof(mcmc_int)*nprm*nbeta*nseq;
+  s_pstp   = sizeof(mcmc_real)*nprm*nbeta*nseq;
   s_hist   = sizeof(mcmc_int)*nadj*nprm*nbeta*nseq;
   s_bsflt  = sizeof(mcmc_real)*nbeta*nseq;
   s_bsint  = sizeof(mcmc_int)*nbeta*nseq;
@@ -520,7 +521,7 @@ CMcmcFit::CMcmcFit(int imodel,
   CUDA_CALL(cudaMalloc((void **) &this->n_cnt, s_acpt));
   CUDA_CALL(cudaMalloc((void **) &this->n_hist, s_hist));
   CUDA_CALL(cudaMalloc((void **) &this->beta, s_beta));
-  CUDA_CALL(cudaMalloc((void **) &this->pstp, s_acpt));
+  CUDA_CALL(cudaMalloc((void **) &this->pstp, s_pstp));
   CUDA_CALL(cudaMalloc((void **) &this->ptent, s_bsflt));
   CUDA_CALL(cudaMalloc((void **) &this->ptentn, s_bsint));
   CUDA_CALL(cudaMalloc((void **) &this->pcur, s_bsptot));
@@ -555,7 +556,7 @@ CMcmcFit::CMcmcFit(int imodel,
   CUDA_CALL(cudaMemcpy(this->n_exch, this->n_exch_h, s_bsint, HtoD));
   CUDA_CALL(cudaMemcpy(this->n_hist, this->n_hist_h, s_hist, HtoD));
   CUDA_CALL(cudaMemcpy(this->beta, this->beta_h, s_beta, HtoD));
-  CUDA_CALL(cudaMemcpy(this->pstp, this->pstp_h, s_acpt, HtoD));
+  CUDA_CALL(cudaMemcpy(this->pstp, this->pstp_h, s_pstp, HtoD));
   CUDA_CALL(cudaMemcpy(this->ptent, this->ptent_h, s_bsflt, HtoD));
   CUDA_CALL(cudaMemcpy(this->ptentn, this->ptentn_h, s_bsint, HtoD));
   CUDA_CALL(cudaMemcpy(this->pcur, this->pcur_h, s_bsptot, HtoD));
@@ -588,7 +589,7 @@ CMcmcFit::~CMcmcFit() {
   CUDA_CALL(cudaMemcpy(this->n_exch_h, this->n_exch, s_bsint, DtoH));
   CUDA_CALL(cudaMemcpy(this->n_hist_h, this->n_hist, s_hist, DtoH));
   CUDA_CALL(cudaMemcpy(this->beta_h, this->beta, s_beta, DtoH));
-  CUDA_CALL(cudaMemcpy(this->pstp_h, this->pstp, s_acpt, DtoH));
+  CUDA_CALL(cudaMemcpy(this->pstp_h, this->pstp, s_pstp, DtoH));
   CUDA_CALL(cudaMemcpy(this->ptent_h, this->ptent, s_bsflt, DtoH));
   CUDA_CALL(cudaMemcpy(this->ptentn_h, this->ptentn, s_bsint, DtoH));
 
